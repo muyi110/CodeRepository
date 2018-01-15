@@ -1,0 +1,1 @@
+直接运行alien_invasion文件
