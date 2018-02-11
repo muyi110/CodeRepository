@@ -32,8 +32,8 @@ void Delete(int X, List L)
     if(!IsLast(p, L))
     {
         temCell = p->Next;
-	p->Next = temCell->Next;
-	free(temCell);
+    	p->Next = temCell->Next;
+    	free(temCell);
     }
 }
 /* If X is not found, then Next field of returned Position is NULL.*/
@@ -55,8 +55,8 @@ void Insert(int X, List L, Position P)
     temCell = (Position)malloc(sizeof(struct Node));
     if(temCell == NULL)
     {
-	printf("Out of space");
-	return;
+	    printf("Out of space");
+	    return;
     }
     temCell->element = X;
     temCell->Next = P->Next;
@@ -72,8 +72,8 @@ void DeleteList(List L)
     while(p != NULL)
     {
         temCell = p->Next; //释放之前，保留下一个元素位置
-	free(p);
-	p = temCell;
+	    free(p);
+	    p = temCell;
     }
 }
 /* 清空一个链表 */
@@ -101,24 +101,24 @@ int main(int argc, char **argv)
     if(L == NULL)
     {
         printf("Out of space(main)");
-	return 0;
+	    return 0;
     }
-    L->Next == NULL;
+    L->Next = NULL;
     L->element = 0;
     Position p = L;
     for(int i = 1; i <= 100; ++i)
     {
         Insert(i, L, p);
-	p = p->Next;
+	    p = p->Next;
     }
     if(!IsEmpty(L))
     {
         p = L->Next;
-	while(p != NULL)
+	    while(p != NULL)
         {
-	    printf("%d  ", p->element);
-	    p = p->Next;
-	}
+	        printf("%d  ", p->element);
+	        p = p->Next;
+	    }
         printf("\n");
     }
     else
