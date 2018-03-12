@@ -122,5 +122,7 @@ int main(int argc, char **argv)
         count = S->top;
         std::cout << "num" << count << ": " << TopAndPop(S) << std::endl;
     }
+
+    DisposeStack(S);
     return 0;
 }
