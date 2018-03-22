@@ -27,6 +27,8 @@ class SerialSet():
         
         self._serial = None
         self._is_connected = False
+        #self.serial_connected_threading_flag = True #串口连接线程标志
+        #self.serial_received_threading_flag = True # 串口数据接收线程标志，目的保证线程之创建一次
 
     def connect(self, timeout = 1):
         """连接设备,超时等待时间1S"""

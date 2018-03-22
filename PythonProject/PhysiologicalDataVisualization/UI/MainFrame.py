@@ -6,7 +6,7 @@ import datetime
 import threading
 
 try:
-    from UI import PytTinter as pytk
+    from UI import PyTkinter as pytk
 except ImportError:
     import PyTkinter as pytk
 g_font = ("Monaco", 16)
@@ -26,7 +26,7 @@ class MainFrame():
         self.gsr_tab = pytk.PyFrame(self.tabcontrol) #皮肤电
         self.tabcontrol.add(self.eeg_tab, text="脑电信号可视化")
         self.tabcontrol.add(self.ecg_tab, text="心电信号可视化")
-        self.tabcontrol.add(self.gsr_tab, text="皮肤电")
+        self.tabcontrol.add(self.gsr_tab, text="皮肤电信号可视化")
         self.tabcontrol.select(self.eeg_tab)
         #将每种数据的tab页分成左右两个部分，左边是设置及状态
         #右边是对应数据波形
