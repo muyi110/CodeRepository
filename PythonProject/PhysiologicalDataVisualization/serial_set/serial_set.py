@@ -27,6 +27,7 @@ class SerialSet():
         
         self._serial = None
         self._is_connected = False
+        self._is_serial_exist = True
         #self.serial_connected_threading_flag = True #串口连接线程标志
         #self.serial_received_threading_flag = True # 串口数据接收线程标志，目的保证线程之创建一次
 
@@ -63,19 +64,21 @@ class SerialSet():
         """串口状态改变回调函数"""
         self._is_connected_temp = False
         while True:   #死循环，保证线程一直运行
-            if platform.system() == "Windows":
-                for com in list_ports.comports():
-                    if com[0] == self.port:
+            if self._is_serial_exist:
+                if platform.system() == "Windows":
+                    for com in list_ports.comports():
+                        if com[0] == self.port:
+                            self._is_connected = True
+                            break
+                elif platform.system() == "Linux":
+                    if self.port in self.find_usb_tty():
                         self._is_connected = True
-                        break
-            elif platform.system() == "Linux":
-                if self.port in self.find_usb_tty():
-                    self._is_connected = True
-
-            if self._is_connected_temp != self._is_connected:
-                func(self._is_connected)
-            self._is_connected_temp = self._is_connected
-            time.sleep(0.8)
+                if self._is_connected_temp != self._is_connected:
+                    func(self._is_connected)
+                self._is_connected_temp = self._is_connected
+                time.sleep(0.8)
+            else:
+                break
 
     def on_data_received(self, func):
         """串口收到数据回调函数"""
@@ -83,7 +86,7 @@ class SerialSet():
         tDataReceived.setDaemon(True)
         tDataReceived.start()
 
-    def _on_data_received(self, func):
+    def _on_data_received(self, func):                #当串口关闭时，此线程会结束
         """串口收到数据回调函数"""
         while True:
             if self._is_connected:
@@ -96,6 +99,7 @@ class SerialSet():
                     time.sleep(0.01)
                 except Exception as e:
                     self._is_connected = False
+                    self._is_serial_exist = False
                     self._serial = None
                     break
 

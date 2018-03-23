@@ -37,7 +37,7 @@ class Main(MainFrame):
     def find_all_devices(self):
         """线程检测连接设备的状态"""
         self.tabIndex = self.tabcontrol.index('current')  #获取当前的tab号
-        #print(threading.active_count()) #获取程序运行线程数----调试作用
+        #print(threading.active_count()) #获取程序运行线程数-------------------------------调试作用
         if self.tabIndex == 0:
             self.find_all_serial_devices_eeg()
         elif self.tabIndex == 1:
@@ -202,12 +202,12 @@ class Main(MainFrame):
                 self.parity = "N"
                 self.databit = "8"
                 self.stopbit = "1"
-                self.ser = SerialSet(Port=self.port,
+                self.ser_eeg = SerialSet(Port=self.port,
                                         BaudRate=self.baudrate,
                                         ByteSize=self.databit,
                                         Parity=self.parity,
                                         Stopbits=self.stopbit)
-                self.ser.on_connected_changed(self.serial_on_connected_changed_eeg)
+                self.ser_eeg.on_connected_changed(self.serial_on_connected_changed_eeg)
             except Exception as e:
                 logging.error(e)
                 try:
@@ -218,7 +218,7 @@ class Main(MainFrame):
                     logging.error(ex)
 
         elif self.eeg_left_btn["text"] == "Close":
-            self.ser.disconnect()
+            self.ser_eeg.disconnect()
             self.eeg_left_btn["text"] = "Open"
             self.eeg_left_btn["bg"] = "#008B8B"
             self.eeg_status_label["text"] = "Close Serial Successful!"
@@ -227,20 +227,20 @@ class Main(MainFrame):
     def serial_on_connected_changed_eeg(self, is_connected):
         """串口连接状态改变回调"""
         if is_connected:
-            self.ser.connect()
-            if self.ser._is_connected:
+            self.ser_eeg.connect()
+            if self.ser_eeg._is_connected:
                 self.eeg_status_label["text"] = "Open [{0}] Successful!".format(
                     self.current_serial_str)
                 self.eeg_status_label["fg"] = "#66CD00"
                 self.eeg_left_btn["text"] = "Close"
                 self.eeg_left_btn["bg"] = "#F08080"
-                self.ser.on_data_received(self.serial_on_data_received_eeg)
+                self.ser_eeg.on_data_received(self.serial_on_data_received_eeg)
             else:
                 self.eeg_status_label["text"] = "Open [{0}] Failed!".format(
                     self.current_serial_str)
                 self.eeg_status_label["fg"] = "#DC143C"
         else:
-            self.ser.disconnect()
+            self.ser_eeg.disconnect()
             self.eeg_left_btn["text"] = "Open"
             self.eeg_left_btn["bg"] = "#008B8B"
             self.eeg_status_label["text"] = "Close Serial Successful!"
@@ -266,12 +266,12 @@ class Main(MainFrame):
                 self.parity = "N"
                 self.databit = "8"
                 self.stopbit = "1"
-                self.ser = SerialSet(Port=self.port,
+                self.ser_ecg = SerialSet(Port=self.port,
                                         BaudRate=self.baudrate,
                                         ByteSize=self.databit,
                                         Parity=self.parity,
                                         Stopbits=self.stopbit)
-                self.ser.on_connected_changed(self.serial_on_connected_changed_ecg)
+                self.ser_ecg.on_connected_changed(self.serial_on_connected_changed_ecg)
             except Exception as e:
                 logging.error(e)
                 try:
@@ -282,7 +282,7 @@ class Main(MainFrame):
                     logging.error(ex)
 
         elif self.ecg_left_btn["text"] == "Close":
-            self.ser.disconnect()
+            self.ser_ecg.disconnect()
             self.ecg_left_btn["text"] = "Open"
             self.ecg_left_btn["bg"] = "#008B8B"
             self.ecg_status_label["text"] = "Close Serial Successful!"
@@ -291,20 +291,20 @@ class Main(MainFrame):
     def serial_on_connected_changed_ecg(self, is_connected):
         """串口连接状态改变回调"""
         if is_connected:
-            self.ser.connect()
-            if self.ser._is_connected:
+            self.ser_ecg.connect()
+            if self.ser_ecg._is_connected:
                 self.ecg_status_label["text"] = "Open [{0}] Successful!".format(
                     self.current_serial_str)
                 self.ecg_status_label["fg"] = "#66CD00"
                 self.ecg_left_btn["text"] = "Close"
                 self.ecg_left_btn["bg"] = "#F08080"
-                self.ser.on_data_received(self.serial_on_data_received_ecg)
+                self.ser_ecg.on_data_received(self.serial_on_data_received_ecg)
             else:
                 self.ecg_status_label["text"] = "Open [{0}] Failed!".format(
                     self.current_serial_str)
                 self.ecg_status_label["fg"] = "#DC143C"
         else:
-            self.ser.disconnect()
+            self.ser_ecg.disconnect()
             self.ecg_left_btn["text"] = "Open"
             self.ecg_left_btn["bg"] = "#008B8B"
             self.ecg_status_label["text"] = "Close Serial Successful!"
@@ -330,12 +330,12 @@ class Main(MainFrame):
                 self.parity = "N"
                 self.databit = "8"
                 self.stopbit = "1"
-                self.ser = SerialSet(Port=self.port,
+                self.ser_gsr = SerialSet(Port=self.port,
                                         BaudRate=self.baudrate,
                                         ByteSize=self.databit,
                                         Parity=self.parity,
                                         Stopbits=self.stopbit)
-                self.ser.on_connected_changed(self.serial_on_connected_changed_gsr)
+                self.ser_gsr.on_connected_changed(self.serial_on_connected_changed_gsr)
             except Exception as e:
                 logging.error(e)
                 try:
@@ -346,7 +346,7 @@ class Main(MainFrame):
                     logging.error(ex)
 
         elif self.gsr_left_btn["text"] == "Close":
-            self.ser.disconnect()
+            self.ser_gsr.disconnect()
             self.gsr_left_btn["text"] = "Open"
             self.gsr_left_btn["bg"] = "#008B8B"
             self.gsr_status_label["text"] = "Close Serial Successful!"
@@ -355,20 +355,20 @@ class Main(MainFrame):
     def serial_on_connected_changed_gsr(self, is_connected):
         """串口连接状态改变回调"""
         if is_connected:
-            self.ser.connect()
-            if self.ser._is_connected:
+            self.ser_gsr.connect()
+            if self.ser_gsr._is_connected:
                 self.gsr_status_label["text"] = "Open [{0}] Successful!".format(
                     self.current_serial_str)
                 self.gsr_status_label["fg"] = "#66CD00"
                 self.gsr_left_btn["text"] = "Close"
                 self.gsr_left_btn["bg"] = "#F08080"
-                self.ser.on_data_received(self.serial_on_data_received_gsr)
+                self.ser_gsr.on_data_received(self.serial_on_data_received_gsr)
             else:
                 self.gsr_status_label["text"] = "Open [{0}] Failed!".format(
                     self.current_serial_str)
                 self.gsr_status_label["fg"] = "#DC143C"
         else:
-            self.ser.disconnect()
+            self.ser_gsr.disconnect()
             self.gsr_left_btn["text"] = "Open"
             self.gsr_left_btn["bg"] = "#008B8B"
             self.gsr_status_label["text"] = "Close Serial Successful!"
