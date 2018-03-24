@@ -4,11 +4,15 @@ import tkinter.font as tkFont
 import tkinter as tk
 import datetime
 import threading
+from matplotlib.figure import Figure
+import matplotlib
 
 try:
     from UI import PyTkinter as pytk
+    from UI import WaveformDisplay
 except ImportError:
     import PyTkinter as pytk
+    from WaveformDisplay import WaveformDisplay 
 g_font = ("Monaco", 16)
 
 class MainFrame():
@@ -16,7 +20,6 @@ class MainFrame():
     def __init__(self, master=None):
         self.root = master
         self.create_frame()
-        #self.state = True
 
     def create_frame(self):
         self.tabcontrol = ttk.Notebook(self.root)
@@ -50,15 +53,32 @@ class MainFrame():
         self.creat_eeg_frame_right()  #创建脑波Tab右边
 
     def creat_eeg_frame_right(self):
-        self.eeg_frame_right_top = pytk.PyLabelFrame(self.eeg_frame_right)
-        self.eeg_frame_right_under = pytk.PyLabelFrame(self.eeg_frame_right)
+        self.eeg_frame_right_top = pytk.PyLabelFrame(self.eeg_frame_right,text="EEG Singal",font=g_font)
+        self.eeg_frame_right_under = pytk.PyLabelFrame(self.eeg_frame_right,
+                                                       text="attentionAndmenatation Sinagl",font=g_font)
         self.eeg_frame_right_top.pack(fill="both", expand=1)
         self.eeg_frame_right_under.pack(fill="both",expand=0)
 
-        self.eight_eeg = pytk.PyCanvas(self.eeg_frame_right_top)
-        self.attention_mentation = pytk.PyCanvas(self.eeg_frame_right_under)
-        self.eight_eeg.grid(row=0, column=0, padx=5, pady=5, sticky="wesn")
-        self.attention_mentation.grid(row=0, column=0, padx=5, pady=5, sticky="wesn")
+        self.figure_attention = Figure(figsize=(6,1.5),dpi=80)
+        self.attention_figure = self.figure_attention.add_subplot(111)
+        self.attention_figure.grid()
+        #此部分开始放画图程序
+        self.wave_attention = WaveformDisplay.WaveformDisplay(self.eeg_frame_right_under)
+        self.wave_attention.creat_waveform_attention_menatation(self.figure_attention)
+
+        self.figure_eeg = Figure(figsize=(3,2),dpi=80)
+        self.LowAlpha_figure = self.figure_eeg.add_subplot(421)
+        self.HighAlpha_figure = self.figure_eeg.add_subplot(422)
+        self.LowBeta_figure = self.figure_eeg.add_subplot(423)
+        self.HighBeta_figure = self.figure_eeg.add_subplot(424)
+        self.LowGamma_figure = self.figure_eeg.add_subplot(425)
+        self.MiddleGamma_figure = self.figure_eeg.add_subplot(426)
+        self.Delta_figure = self.figure_eeg.add_subplot(427)
+        self.Theta_figure = self.figure_eeg.add_subplot(428)
+        #此部分开始放画图程序
+        self.wave_eeg = WaveformDisplay.WaveformDisplay(self.eeg_frame_right_top)
+        self.wave_eeg.creat_waveform_eeg(self.figure_eeg)
+
 
     def creat_eeg_frame_left_top(self):        
 
@@ -102,13 +122,15 @@ class MainFrame():
     def creat_eeg_frame_left_under(self):
         self.eeg_status_label = pytk.PyLabel(self.eeg_frame_left_under,
                                              text="Ready",
-                                             font=g_font)
+                                             font=g_font,
+                                             wraplength=240,
+                                             justify = 'left')
         self.eeg_status_label.grid(row=0, column=0, padx=5, pady=5, sticky="wesn")
 
     def creat_ecg_frame(self):
         """心电tab"""
         self.ecg_frame_left = pytk.PyLabelFrame(self.ecg_tab)
-        self.ecg_frame_right = pytk.PyLabelFrame(self.ecg_tab)
+        self.ecg_frame_right = pytk.PyLabelFrame(self.ecg_tab, text="ECG Singal", font=g_font)
         self.ecg_frame_left.pack(fill="both", expand=0, padx=2, pady=5, side=tk.LEFT)
         self.ecg_frame_right.pack(fill="both", expand=1, padx=2, pady=5, side=tk.RIGHT)
         #左部分分成上下两个部分
@@ -121,8 +143,13 @@ class MainFrame():
         self.creat_ecg_frame_right()
 
     def creat_ecg_frame_right(self):
-        self.ecg_wave = pytk.PyCanvas(self.ecg_frame_right)
-        self.ecg_wave.grid(row=0, column=0, padx=5, pady=5, sticky="wesn")
+        self.figure_ecg = Figure(figsize=(6,5),dpi=100)
+        self.ecg_figure = self.figure_ecg.add_subplot(111)
+        self.ecg_figure.set_xlabel('xxxxx')
+        self.ecg_figure.grid()
+        #此部分开始放画图程序
+        self.wave_ecg = WaveformDisplay.WaveformDisplay(self.ecg_frame_right)
+        self.wave_ecg.creat_waveform_ecg(self.figure_ecg)
 
     def creat_ecg_frame_left_top(self):
         self.ecg_frm_l_label = pytk.PyLabel(self.ecg_frame_left_top,
@@ -165,14 +192,16 @@ class MainFrame():
     def creat_ecg_frame_left_under(self):
         self.ecg_status_label = pytk.PyLabel(self.ecg_frame_left_under,
                                              text="Ready",
-                                             font=g_font)
+                                             font=g_font,
+                                             wraplength=240,
+                                             justify = 'left')
         self.ecg_status_label.grid(row=0, column=0, padx=5, pady=5, sticky="wesn")
 
 
     def creat_gsr_frame(self):
         """皮肤电tab"""
         self.gsr_frame_left = pytk.PyLabelFrame(self.gsr_tab)
-        self.gsr_frame_right = pytk.PyLabelFrame(self.gsr_tab)
+        self.gsr_frame_right = pytk.PyLabelFrame(self.gsr_tab, text="GSR Singal", font=g_font)
         self.gsr_frame_left.pack(fill="both", expand=0, padx=2, pady=5, side=tk.LEFT)
         self.gsr_frame_right.pack(fill="both", expand=1, padx=2, pady=5, side=tk.RIGHT)
         #左部分分成上下两个部分
@@ -185,8 +214,14 @@ class MainFrame():
         self.creat_gsr_frame_right()
 
     def creat_gsr_frame_right(self):
-        self.gsr_wave = pytk.PyCanvas(self.gsr_frame_right)
-        self.gsr_wave.grid(row=0, column=0, padx=5, pady=5, sticky="wesn")
+        self.figure_gsr = Figure(figsize=(6,5),dpi=100)
+        self.gsr_figure = self.figure_gsr.add_subplot(111)
+        self.gsr_figure.grid()
+        #self.gsr_figure.plot((0,1,2),(0,1,2))
+        #此部分开始放画图程序
+        self.wave_gsr = WaveformDisplay.WaveformDisplay(self.gsr_frame_right)
+        self.wave_gsr.creat_waveform_gsr(self.figure_gsr)
+        #self.gsr_figure.plot((0,1,2),(0,1,2))
 
     def creat_gsr_frame_left_top(self):
         self.gsr_frm_l_label = pytk.PyLabel(self.gsr_frame_left_top,
@@ -229,7 +264,9 @@ class MainFrame():
     def creat_gsr_frame_left_under(self):
         self.gsr_status_label = pytk.PyLabel(self.gsr_frame_left_under,
                                              text="Ready",
-                                             font=g_font)
+                                             font=g_font,
+                                             wraplength=240,
+                                             justify = 'left')
         self.gsr_status_label.grid(row=0, column=0, padx=5, pady=5, sticky="wesn")
 
     def open(self, event):

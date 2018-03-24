@@ -45,7 +45,7 @@ class PyLabel(tk.Label):
         if self.theme == "dark":
             dark_theme_dict = {
                                 "bg": "#292929",
-                                "fg": "#E0EEEE"
+                                "fg": "#E0EEEE",
                               }
             for key,value in dark_theme_dict.items():
                 self.temp[key] = value
@@ -91,7 +91,8 @@ class PyListbox(tk.Listbox):
             dark_theme_dict = {
                                 "bg": "#292929",
                                 "fg": "#1E90FF",
-                                "selectbackground": "#00B2EE"
+                                "selectbackground": "#00B2EE",
+                                "height": 8
                               }
             for key,value in dark_theme_dict.items():
                 self.temp[key] = value
@@ -137,8 +138,8 @@ class PyCanvas(tk.Canvas):
         if self.theme == "dark":
             dark_theme_dict = {
                                 "bg": "lightgrey",
-                                "height": 500,
-                                "width": 700
+                                #"height": 500,
+                                #"width": 700
                               }
             for key,value in dark_theme_dict.items():
                 self.temp[key] = value
