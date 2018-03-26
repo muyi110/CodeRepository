@@ -6,6 +6,7 @@ import datetime
 import threading
 from matplotlib.figure import Figure
 import matplotlib
+#import numpy as np
 
 try:
     from UI import PyTkinter as pytk
@@ -222,6 +223,8 @@ class MainFrame():
         self.wave_gsr = WaveformDisplay.WaveformDisplay(self.gsr_frame_right)
         self.wave_gsr.creat_waveform_gsr(self.figure_gsr)
         #self.gsr_figure.plot((0,1,2),(0,1,2))
+        #x = np.arange(0, 2*np.pi, 0.01)
+        #line, = self.gsr_figure.plot(x, np.sin(x))
 
     def creat_gsr_frame_left_top(self):
         self.gsr_frm_l_label = pytk.PyLabel(self.gsr_frame_left_top,

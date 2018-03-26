@@ -23,7 +23,7 @@ class SerialSet():
         self.bytesize = ByteSize
         self.parity = Parity
         self.stopbits = Stopbits
-        self.threshold_value = 1
+        #self.threshold_value = 1
         
         self._serial = None
         self._is_connected = False

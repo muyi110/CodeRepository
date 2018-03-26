@@ -9,6 +9,8 @@ import tkinter as tk
 
 from UI.MainFrame import MainFrame
 from serial_set.serial_set import SerialSet
+from data_processing.DoubleBufferQueue import DoubleBufferQueue
+#from data_processing.BufferQueue import BufferQueue
 
 if platform.system() == "Windows":
     from serial.tools import list_ports
@@ -33,6 +35,8 @@ class Main(MainFrame):
         self.serial_listbox_gsr = list()
         self.find_all_devices()
         self.tabIndex = 0     #tabIndex=0: 脑波界面； tabIndex=1: 心电界面 tabIndex=2: 皮电界面
+        self.double_buffer = DoubleBufferQueue()
+        #self.double_buffer = BufferQueue()
 
     def find_all_devices(self):
         """线程检测连接设备的状态"""
@@ -376,7 +380,9 @@ class Main(MainFrame):
 
     def serial_on_data_received_eeg(self, data):
         """串口接收数据"""
-        pass
+        for element in data:
+            self.double_buffer.writer_eeg(element)
+        print(self.double_buffer.reader_eeg())
 
     def serial_on_data_received_ecg(self, data):
         """串口接收数据"""
