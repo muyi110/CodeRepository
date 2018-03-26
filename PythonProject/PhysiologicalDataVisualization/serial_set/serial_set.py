@@ -23,13 +23,11 @@ class SerialSet():
         self.bytesize = ByteSize
         self.parity = Parity
         self.stopbits = Stopbits
-        #self.threshold_value = 1
         
         self._serial = None
         self._is_connected = False
         self._is_serial_exist = True
-        #self.serial_connected_threading_flag = True #串口连接线程标志
-        #self.serial_received_threading_flag = True # 串口数据接收线程标志，目的保证线程之创建一次
+        self._serial_received_data = False
 
     def connect(self, timeout = 1):
         """连接设备,超时等待时间1S"""
@@ -102,6 +100,27 @@ class SerialSet():
                     self._is_serial_exist = False
                     self._serial = None
                     break
+    def on_data_received_parse(self, func):
+        """数据解析线程"""
+        tDataParse = threading.Thread(target=self._on_data_received_parse, args=(func, ))
+        tDataParse.setDaemon(True)
+        tDataParse.start()
+
+    def _on_data_received_parse(self, func):
+        while True:
+            if self._is_serial_exist:
+                if self._serial_received_data:   #判断串口是否收到数据
+                    try:
+                        func()
+                        self._serial_received_data = False
+                        time.sleep(0.01)
+                    except Exception as e:
+                        self._serial_received_data = False
+                time.sleep(0.01)
+            else:
+                break
+
+
 
     def find_usb_tty(self, vendor_id=None, product_id=None):
         """查找Linux下的串口设备"""

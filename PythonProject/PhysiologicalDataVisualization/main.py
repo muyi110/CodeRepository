@@ -11,6 +11,7 @@ from UI.MainFrame import MainFrame
 from serial_set.serial_set import SerialSet
 from data_processing.DoubleBufferQueue import DoubleBufferQueue
 #from data_processing.BufferQueue import BufferQueue
+from data_processing.DataParser import DataParserEEG, DataParserECG
 
 if platform.system() == "Windows":
     from serial.tools import list_ports
@@ -37,6 +38,8 @@ class Main(MainFrame):
         self.tabIndex = 0     #tabIndex=0: 脑波界面； tabIndex=1: 心电界面 tabIndex=2: 皮电界面
         self.double_buffer = DoubleBufferQueue()
         #self.double_buffer = BufferQueue()
+        self.dataParse_eeg = DataParserEEG()
+        self.dataParse_ecg = DataParserECG()
 
     def find_all_devices(self):
         """线程检测连接设备的状态"""
@@ -48,7 +51,7 @@ class Main(MainFrame):
             self.find_all_serial_devices_ecg()
         elif self.tabIndex == 2:
             self.find_all_serial_devices_gsr()
-        self.start_thread_timer(self.find_all_devices, 1)
+        self.start_thread_timer(self.find_all_devices, 2)
 
     def find_all_serial_devices_eeg(self):
         """检查串口设备"""
@@ -238,7 +241,8 @@ class Main(MainFrame):
                 self.eeg_status_label["fg"] = "#66CD00"
                 self.eeg_left_btn["text"] = "Close"
                 self.eeg_left_btn["bg"] = "#F08080"
-                self.ser_eeg.on_data_received(self.serial_on_data_received_eeg)
+                self.ser_eeg.on_data_received(self.serial_on_data_received_eeg) #串口数据接收线程
+                self.ser_eeg.on_data_received_parse(self.data_parse_eeg)#串口数据解析线程
             else:
                 self.eeg_status_label["text"] = "Open [{0}] Failed!".format(
                     self.current_serial_str)
@@ -303,6 +307,7 @@ class Main(MainFrame):
                 self.ecg_left_btn["text"] = "Close"
                 self.ecg_left_btn["bg"] = "#F08080"
                 self.ser_ecg.on_data_received(self.serial_on_data_received_ecg)
+                self.ser_ecg.on_data_received_parse(self.data_parse_ecg)#串口数据解析线程
             else:
                 self.ecg_status_label["text"] = "Open [{0}] Failed!".format(
                     self.current_serial_str)
@@ -367,6 +372,7 @@ class Main(MainFrame):
                 self.gsr_left_btn["text"] = "Close"
                 self.gsr_left_btn["bg"] = "#F08080"
                 self.ser_gsr.on_data_received(self.serial_on_data_received_gsr)
+                self.ser_gsr.on_data_received_parse(self.data_parse_gsr) #串口数据解析线程
             else:
                 self.gsr_status_label["text"] = "Open [{0}] Failed!".format(
                     self.current_serial_str)
@@ -382,15 +388,30 @@ class Main(MainFrame):
         """串口接收数据"""
         for element in data:
             self.double_buffer.writer_eeg(element)
-        print(self.double_buffer.reader_eeg())
+        self.ser_eeg._serial_received_data = True
 
     def serial_on_data_received_ecg(self, data):
         """串口接收数据"""
-        pass
+        for element in data:
+            self.double_buffer.writer_ecg(element)
+        self.ser_ecg._serial_received_data = True
 
     def serial_on_data_received_gsr(self, data):
         """串口接收数据"""
         pass
+
+    def data_parse_eeg(self):
+        """开始数据解析"""
+        for element in self.double_buffer.reader_eeg():
+            self.dataParse_eeg.parseByte(data)
+
+    def data_parse_ecg(self):
+        for element in self.double_buffer.reader_ecg():
+            self.dataParse_ecg.parseByte(data)
+
+    def data_parse_gsr(self):
+        pass
+
 
 
 if __name__ == '__main__':

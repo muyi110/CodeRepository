@@ -34,14 +34,14 @@ class DataParserEEG():
     def parseByte(self, data):
         if self.parserStatus == self.PARSER_STATE_SYNC:
             if (data & 0xFF) != self.PARSER_SYNC_BYTE:
-                break
+                return -1
             self.parserStatus = self.PARSER_STATE_SYNC_CHECK
         elif self.parserStatus == self.PARSER_STATE_SYNC_CHECK:
             if (data & 0xFF) == self.PARSER_SYNC_BYTE:
                 self.parserStatus = self.PARSER_STATE_PAYLOAD_LENGTH
             else:
                 self.parserStatus = self.PARSER_STATE_SYNC
-                break
+                return -1
         elif self.parserStatus == self.PARSER_STATE_PAYLOAD_LENGTH:
             self.payloadLength = (data & 0x0FF)     #获取一包数据的长度
             self.payloadBytesReceived = 0
@@ -52,7 +52,7 @@ class DataParserEEG():
             self.payloadBytesReceived = self.payloadBytesReceived + 1 #记录一包数据接收的个数
             self.payloadSum = self.payloadSum + (data & 0xFF)
             if self.payloadBytesReceived < self.payloadLength:
-                break
+                return -1
             self.parserStatus = self.PARSER_STATE_CHKSUM
         elif self.parserStatus == self.PARSER_STATE_CHKSUM:
             self.checksum = (data & 0xFF)
@@ -60,7 +60,7 @@ class DataParserEEG():
             if self.checksum == (self.payloadSum ^ 0xFFFFFFFF) & 0xFF:
                 self.parsePacketPayload()
             else:
-                break
+                return -1
 
     def parsePacketPayload(self):
         i = 0
@@ -199,14 +199,14 @@ class DataParserECG():
     def parseByte(self, data):
         if self.parserStatus == self.PARSER_STATE_SYNC:
             if (data & 0xFF) != self.PARSER_SYNC_BYTE:
-                break
+                return -1
             self.parserStatus = self.PARSER_STATE_SYNC_CHECK
         elif self.parserStatus == self.PARSER_STATE_SYNC_CHECK:
             if (data & 0xFF) == self.PARSER_SYNC_BYTE:
                 self.parserStatus = self.PARSER_STATE_PAYLOAD_LENGTH
             else:
                 self.parserStatus = self.PARSER_STATE_SYNC
-                break
+                return -1
         elif self.parserStatus == self.PARSER_STATE_PAYLOAD_LENGTH:
             self.payloadLength = (data & 0x0FF)     #获取一包数据的长度
             self.payloadBytesReceived = 0
@@ -217,7 +217,7 @@ class DataParserECG():
             self.payloadBytesReceived = self.payloadBytesReceived + 1 #记录一包数据接收的个数
             self.payloadSum = self.payloadSum + (data & 0xFF)
             if self.payloadBytesReceived < self.payloadLength:
-                break
+                return -1
             self.parserStatus = self.PARSER_STATE_CHKSUM
         elif self.parserStatus == self.PARSER_STATE_CHKSUM:
             self.checksum = (data & 0xFF)
@@ -225,7 +225,7 @@ class DataParserECG():
             if self.checksum == (self.payloadSum ^ 0xFFFFFFFF) & 0xFF:
                 self.parsePacketPayload()
             else:
-                break
+                return -1
 
     def parsePacketPayload(self):
         i = 0
