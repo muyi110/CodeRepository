@@ -6,7 +6,7 @@ import datetime
 import threading
 from matplotlib.figure import Figure
 import matplotlib
-#import numpy as np
+import numpy as np
 
 try:
     from UI import PyTkinter as pytk
@@ -56,29 +56,70 @@ class MainFrame():
     def creat_eeg_frame_right(self):
         self.eeg_frame_right_top = pytk.PyLabelFrame(self.eeg_frame_right,text="EEG Singal",font=g_font)
         self.eeg_frame_right_under = pytk.PyLabelFrame(self.eeg_frame_right,
-                                                       text="attentionAndmeditation Singal",font=g_font)
+                                                       text="RawEEGWave Singal",font=g_font)
         self.eeg_frame_right_top.pack(fill="both", expand=1)
         self.eeg_frame_right_under.pack(fill="both",expand=0)
 
-        self.figure_attention = Figure(figsize=(6,1.5),dpi=80)
-        self.attention_figure = self.figure_attention.add_subplot(111)
-        self.attention_figure.grid()
+        self.figure_raw_eeg = Figure(figsize=(6,2),dpi=80)
+        self.raw_eeg_figure = self.figure_raw_eeg.add_subplot(111)
+        self.raw_eeg_figure.grid()
         #此部分开始放画图程序
-        self.wave_attention = WaveformDisplay.WaveformDisplay(self.eeg_frame_right_under)
-        self.wave_attention.creat_waveform_attention_meditation(self.figure_attention)
+        self.wave_raw_eeg = WaveformDisplay.WaveformDisplay(self.eeg_frame_right_under)
+        self.wave_raw_eeg.creat_waveform_attention_meditation(self.figure_raw_eeg)
+        self.raw_eeg_figure.set_xlim(0,1000)     #设置x轴范围
+        self.raw_eeg_figure.set_ylim(-100,100)   #设置y轴范围
+        self.raw_eeg_figure.plot((0,1000),(0,0),color='gray',linewidth = 2)
+        for i in range(0,1001,100):
+            self.raw_eeg_figure.plot((i,i),(-100,100),color='black',linewidth = 1, linestyle=':')
+        self.raw_eeg_figure.axes.get_xaxis().set_visible(False)
+        self.figure_raw_eeg.subplots_adjust(left=0.05, right=0.99, top=0.96, bottom=0.04)
 
-        self.figure_eeg = Figure(figsize=(3,2),dpi=80)
+        self.figure_eeg = Figure(figsize=(3,1.5),dpi=80)
         self.LowAlpha_figure = self.figure_eeg.add_subplot(421)
+        self.LowAlpha_figure.grid()
+        self.LowAlpha_figure.set_xlim(0,500)     #设置x轴范围
+        self.LowAlpha_figure.set_ylim(-100,100)   #设置y轴范围
         self.HighAlpha_figure = self.figure_eeg.add_subplot(422)
+        self.HighAlpha_figure.grid()
+        self.HighAlpha_figure.set_xlim(0,500)     #设置x轴范围
+        self.HighAlpha_figure.set_ylim(-100,100)   #设置y轴范围
         self.LowBeta_figure = self.figure_eeg.add_subplot(423)
+        self.LowBeta_figure.grid()
+        self.LowBeta_figure.set_xlim(0,500)     #设置x轴范围
+        self.LowBeta_figure.set_ylim(-100,100)   #设置y轴范围
         self.HighBeta_figure = self.figure_eeg.add_subplot(424)
+        self.HighBeta_figure.grid()
+        self.HighBeta_figure.set_xlim(0,500)     #设置x轴范围
+        self.HighBeta_figure.set_ylim(-100,100)   #设置y轴范围
         self.LowGamma_figure = self.figure_eeg.add_subplot(425)
+        self.LowGamma_figure.grid()
+        self.LowGamma_figure.set_xlim(0,500)     #设置x轴范围
+        self.LowGamma_figure.set_ylim(-100,100)   #设置y轴范围
         self.MiddleGamma_figure = self.figure_eeg.add_subplot(426)
+        self.MiddleGamma_figure.grid()
+        self.MiddleGamma_figure.set_xlim(0,500)     #设置x轴范围
+        self.MiddleGamma_figure.set_ylim(-100,100)   #设置y轴范围
         self.Delta_figure = self.figure_eeg.add_subplot(427)
+        self.Delta_figure.grid()
+        self.Delta_figure.set_xlim(0,500)     #设置x轴范围
+        self.Delta_figure.set_ylim(-100,100)   #设置y轴范围
         self.Theta_figure = self.figure_eeg.add_subplot(428)
+        self.Theta_figure.grid()
+        self.Theta_figure.set_xlim(0,500)     #设置x轴范围
+        self.Theta_figure.set_ylim(-100,100)   #设置y轴范围
         #此部分开始放画图程序
         self.wave_eeg = WaveformDisplay.WaveformDisplay(self.eeg_frame_right_top)
         self.wave_eeg.creat_waveform_eeg(self.figure_eeg)
+
+        self.LowAlpha_figure.axes.get_xaxis().set_visible(False)
+        self.HighAlpha_figure.axes.get_xaxis().set_visible(False)
+        self.LowBeta_figure.axes.get_xaxis().set_visible(False)
+        self.HighBeta_figure.axes.get_xaxis().set_visible(False)
+        self.LowGamma_figure.axes.get_xaxis().set_visible(False)
+        self.MiddleGamma_figure.axes.get_xaxis().set_visible(False)
+        self.Delta_figure.axes.get_xaxis().set_visible(False)
+        self.Theta_figure.axes.get_xaxis().set_visible(False)
+        self.figure_eeg.subplots_adjust(left=0.05, right=0.99, top=0.98, bottom=0.02)
 
 
     def creat_eeg_frame_left_top(self):        
@@ -151,6 +192,13 @@ class MainFrame():
         #此部分开始放画图程序
         self.wave_ecg = WaveformDisplay.WaveformDisplay(self.ecg_frame_right)
         self.wave_ecg.creat_waveform_ecg(self.figure_ecg)
+        self.ecg_figure.set_xlim(0,1000)     #设置x轴范围
+        self.ecg_figure.set_ylim(-100,100)   #设置y轴范围
+        self.ecg_figure.plot((0,1000),(0,0),color='gray',linewidth = 2)
+        for i in range(0,1001,100):
+            self.ecg_figure.plot((i,i),(-100,100),color='black',linewidth = 1, linestyle=':')
+        self.ecg_figure.axes.get_xaxis().set_visible(False)   #不显示x轴刻度
+        self.figure_ecg.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
 
     def creat_ecg_frame_left_top(self):
         self.ecg_frm_l_label = pytk.PyLabel(self.ecg_frame_left_top,
@@ -218,16 +266,23 @@ class MainFrame():
         self.figure_gsr = Figure(figsize=(6,5),dpi=100)
         self.gsr_figure = self.figure_gsr.add_subplot(111)
         self.gsr_figure.grid()
-        #self.gsr_figure.plot((0,1,2),(0,1,2))
         #此部分开始放画图程序
         self.wave_gsr = WaveformDisplay.WaveformDisplay(self.gsr_frame_right)
         self.wave_gsr.creat_waveform_gsr(self.figure_gsr)
-        #self.gsr_figure.plot((0,1,2),(0,1,2))
-        #x = np.arange(0, 2*np.pi, 0.01)
-        #line, = self.gsr_figure.plot(x, np.sin(x))
-        #self.gsr_figure.plot((0,1),(0,1))
-        #self.gsr_figure.plot((1,2),(1,3))
-        #self.gsr_figure.plot((2,3),(3,1))
+        x = np.arange(100, 1100, 1)   #----------------------------------测试
+        y = 10*np.sin(x)
+        if max(x) > 1000:
+            x = x - 100
+            y = 10*np.sin(x)
+        line, = self.gsr_figure.plot(x, y)#--------------------------测试
+        self.gsr_figure.set_xlim(0,1000)     #设置x轴范围
+        self.gsr_figure.set_ylim(-50,50)   #设置y轴范围
+        self.gsr_figure.plot((0,1000),(0,0),color='gray',linewidth = 2)
+        for i in range(0,1001,100):
+            self.gsr_figure.plot((i,i),(-50,50),color='black',linewidth = 1, linestyle=':')
+        self.gsr_figure.axes.get_xaxis().set_visible(False)
+        self.figure_gsr.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
+        #line.set_ydata(np.ma.array(x, mask=True))#-------------------------------测试
 
     def creat_gsr_frame_left_top(self):
         self.gsr_frm_l_label = pytk.PyLabel(self.gsr_frame_left_top,

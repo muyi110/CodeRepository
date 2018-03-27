@@ -404,10 +404,12 @@ class Main(MainFrame):
         """开始数据解析"""
         for element in self.double_buffer.reader_eeg():
             self.dataParse_eeg.parseByte(data)
+        self.ser_eeg._serial_received_data = False
 
     def data_parse_ecg(self):
         for element in self.double_buffer.reader_ecg():
             self.dataParse_ecg.parseByte(data)
+        self.ser_ecg._serial_received_data = False
 
     def data_parse_gsr(self):
         pass
@@ -416,7 +418,7 @@ class Main(MainFrame):
 
 if __name__ == '__main__':
     root = tk.Tk()
-    root.title('Physiological Data Visualization Soft')
+    root.title('Physiological Data Visualization Software')
     root.columnconfigure(0, weight=1)
     root.rowconfigure(0, weight=1)
     root.geometry()

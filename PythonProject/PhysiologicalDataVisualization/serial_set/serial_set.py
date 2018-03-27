@@ -112,7 +112,7 @@ class SerialSet():
                 if self._serial_received_data:   #判断串口是否收到数据
                     try:
                         func()
-                        self._serial_received_data = False
+                        #self._serial_received_data = False
                         time.sleep(0.01)
                     except Exception as e:
                         self._serial_received_data = False
