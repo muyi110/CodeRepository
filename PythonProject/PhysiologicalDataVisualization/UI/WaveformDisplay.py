@@ -20,7 +20,7 @@ class WaveformDisplay():
         canvas.show()
         canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
-    def creat_waveform_attention_menatation(self, figure):
+    def creat_waveform_attention_meditation(self, figure):
         """创建注意力和冥想度波形"""
         canvas = FigureCanvasTkAgg(figure, master=self.root)
         canvas.show()

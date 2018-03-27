@@ -56,7 +56,7 @@ class MainFrame():
     def creat_eeg_frame_right(self):
         self.eeg_frame_right_top = pytk.PyLabelFrame(self.eeg_frame_right,text="EEG Singal",font=g_font)
         self.eeg_frame_right_under = pytk.PyLabelFrame(self.eeg_frame_right,
-                                                       text="attentionAndmenatation Sinagl",font=g_font)
+                                                       text="attentionAndmeditation Singal",font=g_font)
         self.eeg_frame_right_top.pack(fill="both", expand=1)
         self.eeg_frame_right_under.pack(fill="both",expand=0)
 
@@ -65,7 +65,7 @@ class MainFrame():
         self.attention_figure.grid()
         #此部分开始放画图程序
         self.wave_attention = WaveformDisplay.WaveformDisplay(self.eeg_frame_right_under)
-        self.wave_attention.creat_waveform_attention_menatation(self.figure_attention)
+        self.wave_attention.creat_waveform_attention_meditation(self.figure_attention)
 
         self.figure_eeg = Figure(figsize=(3,2),dpi=80)
         self.LowAlpha_figure = self.figure_eeg.add_subplot(421)
@@ -225,6 +225,9 @@ class MainFrame():
         #self.gsr_figure.plot((0,1,2),(0,1,2))
         #x = np.arange(0, 2*np.pi, 0.01)
         #line, = self.gsr_figure.plot(x, np.sin(x))
+        #self.gsr_figure.plot((0,1),(0,1))
+        #self.gsr_figure.plot((1,2),(1,3))
+        #self.gsr_figure.plot((2,3),(3,1))
 
     def creat_gsr_frame_left_top(self):
         self.gsr_frm_l_label = pytk.PyLabel(self.gsr_frame_left_top,

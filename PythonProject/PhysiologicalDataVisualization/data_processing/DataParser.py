@@ -1,5 +1,8 @@
 #此模块为数据解析模块
-
+try:
+    from DoubleBufferQueue import DoubleBufferQueue_ParseData_eeg, DoubleBufferQueue_ParseData_ecg
+except ImportError:
+    from data_processing.DoubleBufferQueue import DoubleBufferQueue_ParseData_eeg, DoubleBufferQueue_ParseData_ecg
 class DataParserEEG():
     def __init__(self):
         self.PARSER_CODE_ATTENTION = 4    #注意力
@@ -30,6 +33,11 @@ class DataParserEEG():
         self.payload = list()            #存放一包中的有效数据
 
         self.parserStatus = self.PARSER_STATE_SYNC
+        self.double_queue_parse_data_eeg = DoubleBufferQueue_ParseData_eeg() #创建解析后的数据双缓冲实例
+        self.ten_eeg_dict = {'delta':0, 'theta':0, 'lowalpha':0, 'highalpha':0,
+                            'lowbeta':0, 'highbeta':0, 'lowgamma':0, 'midgamma':0,
+                            'meditation':0, 'attention':0}
+        self._flag_get_ten_eeg = False
 
     def parseByte(self, data):
         if self.parserStatus == self.PARSER_STATE_SYNC:
@@ -87,64 +95,67 @@ class DataParserEEG():
                     rawWaveData = self.getRawWaveValue(highOrderByte, lowOrderByte)
                     if rawWaveData > 32768:
                         rawWaveData = rawWaveData - 65536
-                    #这里存放原始脑波数据
+                    self.double_queue_parse_data_eeg.writer_raw_eeg(rawWaveData)   #这里存放原始脑波数据
                 i = i + valueBytesLength
             else:
                 if code == self.PARSER_CODE_POOR_SIGNAL:
                     signal = self.payload[i] & 0xFF
                     i = i + valueBytesLength
-                elif code == self.PARSER_CODE_EEG_POWER: #8种脑电波形
+                elif code == self.PARSER_CODE_EEG_POWER:       #8种脑电波形
                     if signal == 0:
+                        self._flag_get_ten_eeg = True
                         highOrderByte = self.payload[i]
                         midOrderByte = self.payload[i + 1]
                         lowOrderByte = self.payload[i + 2]
                         delta = self.getEEGPowerValue(highOrderByte, midOrderByte. lowOrderByte)
-                        #这里存放delta波
+                        self.ten_eeg_dict['delta'] = delta         #这里存放delta波
                         highOrder = self.payload[i + 3]
                         midOrderByte = self.payload[i + 4]
                         lowOrderByte = self.payload[i + 5]
                         theta = self.getEEGPowerValue(highOrderByte, midOrderByte. lowOrderByte)
-                        #这里存放theta波
+                        self.ten_eeg_dict['theta'] = theta         #这里存放theta波
                         highOrder = self.payload[i + 6]
                         midOrderByte = self.payload[i + 7]
                         lowOrderByte = self.payload[i + 8]
                         lowalpha = self.getEEGPowerValue(highOrderByte, midOrderByte. lowOrderByte)
-                        #这里存放lowalpha波
+                        self.ten_eeg_dict['lowalpha'] = lowalpha   #这里存放lowalpha波
                         highOrder = self.payload[i + 9]
                         midOrderByte = self.payload[i + 10]
                         lowOrderByte = self.payload[i + 11]
                         highalpha = self.getEEGPowerValue(highOrderByte, midOrderByte. lowOrderByte)
-                        #这里存放highalpha波
+                        self.ten_eeg_dict['highalpha'] = highalpha #这里存放highalpha波
                         highOrder = self.payload[i + 12]
                         midOrderByte = self.payload[i + 13]
                         lowOrderByte = self.payload[i + 14]
                         lowbeta = self.getEEGPowerValue(highOrderByte, midOrderByte. lowOrderByte)
-                        #这里存放lowbeta波
+                        self.ten_eeg_dict['lowbeta'] = lowbeta     #这里存放lowbeta波
                         highOrder = self.payload[i + 15]
                         midOrderByte = self.payload[i + 16]
                         lowOrderByte = self.payload[i + 17]
                         highbeta = self.getEEGPowerValue(highOrderByte, midOrderByte. lowOrderByte)
-                        #这里存放highbeta波
+                        self.ten_eeg_dict['highbeta'] = highbeta   #这里存放highbeta波
                         highOrder = self.payload[i + 18]
                         midOrderByte = self.payload[i + 19]
                         lowOrderByte = self.payload[i + 20]
                         lowgamma = self.getEEGPowerValue(highOrderByte, midOrderByte. lowOrderByte)
-                        #这里存放lowgamma波
+                        self.ten_eeg_dict['lowgamma'] = lowgamma   #这里存放lowgamma波
                         highOrder = self.payload[i + 21]
                         midOrderByte = self.payload[i + 22]
                         lowOrderByte = self.payload[i + 23]
                         midgamma = self.getEEGPowerValue(highOrderByte, midOrderByte. lowOrderByte)
-                        #这里存放midgamma波
+                        self.ten_eeg_dict['midgamma'] = midgamma   #这里存放midgamma波
                     i = i + valueBytesLength
                 elif code == self.PARSER_CODE_ATTENTION:
                     if signal == 0:
+                        self._flag_get_ten_eeg = True
                         attention = self.payload[i] & 0xFF
-                        #这里存放注意力
+                        self.ten_eeg_dict['attention'] = attention #这里存放注意力
                     i = i + valueBytesLength
                 elif code == self.PARSER_CODE_MEDITATION:
                     if signal == 0:
+                        self._flag_get_ten_eeg = True
                         meditation = self.payload[i]
-                        #这里存放冥想度
+                        self.ten_eeg_dict['meditation'] = meditation #这里存放冥想度
                     i = i + valueBytesLength
                 elif code == self.PARSER_CODE_DEBUG_ONE:
                     if valueBytesLength == self.EEG_DEBUG_ONE_BYTE_LENGTH:
@@ -152,6 +163,9 @@ class DataParserEEG():
                 elif code == self.PARSER_CODE_DEBUG_TWO:
                     if valueBytesLength == self.EEG_DEBUG_TWO_BYTE_LENGTH:
                         i = i + valueBytesLength
+        if _flag_get_ten_eeg:
+            self.double_queue_parse_data_eeg.writer_ten_eeg(ten_eeg_dict)  #将10种信号存放在缓存中
+            self._flag_get_ten_eeg = False
         self.parserStatus = self.PARSER_STATE_SYNC
     
     def getRawWaveValue(self, highOrder, lowOrderByte):
@@ -195,6 +209,7 @@ class DataParserECG():
         self.payload = list()            #存放一包中的有效数据
 
         self.parserStatus = self.PARSER_STATE_SYNC
+        self.double_queue_parse_data_ecg = DoubleBufferQueue_ParseData_ecg() #创建解析后的数据双缓冲实例
 
     def parseByte(self, data):
         if self.parserStatus == self.PARSER_STATE_SYNC:
@@ -253,7 +268,7 @@ class DataParserECG():
                     rawWaveData = self.getRawWaveValue(highOrderByte, lowOrderByte)
                     if rawWaveData > 32768:
                         rawWaveData = rawWaveData - 65536
-                    #这里存放原始心电数据
+                    self.double_queue_parse_data_ecg.writer_raw_ecg(rawWaveData)  #这里存放原始心电数据
                 i = i + valueBytesLength
             else:
                 if code == self.PARSER_CODE_POOR_SIGNAL:
@@ -262,7 +277,7 @@ class DataParserECG():
                 elif code == self.PARSER_CODE_HEARTRATE:
                     if signal == 0:
                         heartRateValue = self.payload[i] & 0xFF
-                        #这里存放心率值
+                        self.double_queue_parse_data_ecg.writer_heartValue(heartRateValue) #这里存放心率值
                     i = i + valueBytesLength
                 elif code == self.PARSER_CODE_CONFIGURATION:
                     i = i + valueBytesLength
