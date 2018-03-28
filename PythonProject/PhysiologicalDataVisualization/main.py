@@ -13,6 +13,7 @@ from serial_set.serial_set import SerialSet
 from data_processing.DoubleBufferQueue import DoubleBufferQueue
 #from data_processing.BufferQueue import BufferQueue
 from data_processing.DataParser import DataParserEEG, DataParserECG
+from data_processing.Filter import ECGFilter
 
 if platform.system() == "Windows":
     from serial.tools import list_ports
@@ -69,6 +70,8 @@ class Main(MainFrame):
         self.meditation_list = list()
         self.raweeg_list = list()
         self.rawecg_list = list()
+        self.rawecgTemp_list = list()
+        self.rawecglowtemp_list = list()
         self.rawgsr_list = list()
         self.current_ten_eeg = 0
         self.current_raw_eeg = 0
@@ -81,6 +84,7 @@ class Main(MainFrame):
         #self.double_buffer = BufferQueue()
         self.dataParse_eeg = DataParserEEG()
         self.dataParse_ecg = DataParserECG()
+        self.ecgfilter = ECGFilter()
 
 
     def find_all_devices(self):
@@ -622,13 +626,36 @@ class Main(MainFrame):
             i = 0
             while i < self.current_raw_ecg:
                 srcIndex = i + originalIndex - self.current_raw_ecg
-                self.rawecg_list[i] = self.rawecg_list[srcIndex]
+                #self.rawecg_list[i] = self.rawecg_list[srcIndex]
+                self.rawecgTemp_list[i] = self.rawecgTemp_list[srcIndex]
+                #self.rawecglowtemp_list[i] = self.rawecglowtemp_list[srcIndex]
                 i = i + 1
         n = 0
         while n < len(temp_list):
-            self.rawecg_list[self.current_raw_ecg] = temp_list[n] / 40000
+            #self.rawecg_list[self.current_raw_ecg] = temp_list[n] / 36
+            self.rawecgTemp_list[self.current_raw_ecg] = temp_list[n] / 36
             self.current_raw_ecg = self.current_raw_ecg + 1
             n = n + 1
+        #下面是心电数据滤波处理（可能有问题）
+        tempECGArry = list()
+        tempECGArry = self.rawecgTemp_list
+        arry = self.ecgfilter.filter(tempECGArry)
+        self.rawecg_list = arry
+        i = 0
+        for element in self.rawecg_list:
+            if element > -1500 and element < 0:
+                element = element / 2
+            if element > 0:
+                element = element / 3
+            self.rawecglowtemp_list[i] = element
+            i = i + 1
+        averageArry1 = list()
+        averageArry1 = self.rawecglowtemp_list
+        averageArry = self.ecgfilter.averagefilter(N = 15, kw = averageArry1)
+        t = 0
+        while t < len(averageArry):
+            self.rawecg_list[t] = averageArry[t]
+            t = t + 1
         #下面开始触发画图
         x = np.arange(0, len(rawecg_list), 1)
         line, = self.ecg_figure.plot(x, rawecg_list)
