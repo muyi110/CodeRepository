@@ -79,42 +79,42 @@ class MainFrame():
         self.LowAlpha_figure.grid()
         self.LowAlpha_figure.set_title("LowAlpha",fontsize=11)
         self.LowAlpha_figure.set_xlim(0,500)     #设置x轴范围
-        self.LowAlpha_figure.set_ylim(-100,100)   #设置y轴范围
+        self.LowAlpha_figure.set_ylim(0,100)   #设置y轴范围
         self.HighAlpha_figure = self.figure_eeg.add_subplot(422)
         self.HighAlpha_figure.grid()
         self.HighAlpha_figure.set_title("HighAlpha",fontsize=11)
         self.HighAlpha_figure.set_xlim(0,500)     #设置x轴范围
-        self.HighAlpha_figure.set_ylim(-100,100)   #设置y轴范围
+        self.HighAlpha_figure.set_ylim(0,100)   #设置y轴范围
         self.LowBeta_figure = self.figure_eeg.add_subplot(423)
         self.LowBeta_figure.grid()
         self.LowBeta_figure.set_title("LowBeta",fontsize=11)
         self.LowBeta_figure.set_xlim(0,500)     #设置x轴范围
-        self.LowBeta_figure.set_ylim(-100,100)   #设置y轴范围
+        self.LowBeta_figure.set_ylim(0,100)   #设置y轴范围
         self.HighBeta_figure = self.figure_eeg.add_subplot(424)
         self.HighBeta_figure.grid()
         self.HighBeta_figure.set_title("HighBeta",fontsize=11)
         self.HighBeta_figure.set_xlim(0,500)     #设置x轴范围
-        self.HighBeta_figure.set_ylim(-100,100)   #设置y轴范围
+        self.HighBeta_figure.set_ylim(0,100)   #设置y轴范围
         self.LowGamma_figure = self.figure_eeg.add_subplot(425)
         self.LowGamma_figure.grid()
         self.LowGamma_figure.set_title("LowGamma",fontsize=11)
         self.LowGamma_figure.set_xlim(0,500)     #设置x轴范围
-        self.LowGamma_figure.set_ylim(-100,100)   #设置y轴范围
+        self.LowGamma_figure.set_ylim(0,100)   #设置y轴范围
         self.MiddleGamma_figure = self.figure_eeg.add_subplot(426)
         self.MiddleGamma_figure.grid()
         self.MiddleGamma_figure.set_title("MiddleGamma",fontsize=11)
         self.MiddleGamma_figure.set_xlim(0,500)     #设置x轴范围
-        self.MiddleGamma_figure.set_ylim(-100,100)   #设置y轴范围
+        self.MiddleGamma_figure.set_ylim(0,100)   #设置y轴范围
         self.Delta_figure = self.figure_eeg.add_subplot(427)
         self.Delta_figure.grid()
         self.Delta_figure.set_title("Delta",fontsize=11)
         self.Delta_figure.set_xlim(0,500)     #设置x轴范围
-        self.Delta_figure.set_ylim(-100,100)   #设置y轴范围
+        self.Delta_figure.set_ylim(0,100)   #设置y轴范围
         self.Theta_figure = self.figure_eeg.add_subplot(428)
         self.Theta_figure.grid()
         self.Theta_figure.set_title("Theta",fontsize=11)
         self.Theta_figure.set_xlim(0,500)     #设置x轴范围
-        self.Theta_figure.set_ylim(-100,100)   #设置y轴范围
+        self.Theta_figure.set_ylim(0,100)     #设置y轴范围
         #此部分开始放画图程序
         self.wave_eeg = WaveformDisplay.WaveformDisplay(self.eeg_frame_right_top)
         self.wave_eeg.creat_waveform_eeg(self.figure_eeg)
