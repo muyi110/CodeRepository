@@ -97,13 +97,13 @@ class Main(MainFrame):
         #    if self.start < 0:
         #        self.start = 0
         #    y = 10*np.sin(x)
-        #line, = self.gsr_figure.plot(x, y)#--------------------------测试  
+        #line, = self.gsr_figure.plot(x, y,color = 'red')#--------------------------测试  
         #self.wave_gsr.canvas_gsr.show()
         #line.set_ydata(np.ma.array(x, mask=True))         
         #self.number = self.number + 20    #--------------------------测试
 
         self.tabIndex = self.tabcontrol.index('current')  #获取当前的tab号
-        #print(threading.active_count()) #获取程序运行线程数-------------------------------调试作用
+        print(threading.active_count()) #获取程序运行线程数-------------------------------调试作用
         if self.tabIndex == 0:
             self.find_all_serial_devices_eeg()
         elif self.tabIndex == 1:
@@ -459,27 +459,31 @@ class Main(MainFrame):
         """串口接收数据"""
         pass
 
-    def data_parse_eeg(self):
+    def data_parse_eeg(self,data):
         """开始数据解析"""
         for element in self.double_buffer.reader_eeg():
-            self.dataParse_eeg.parseByte(data)
+            self.dataParse_eeg.parseByte(element)
         self.ser_eeg._serial_received_data = False
         #下面是直接调用画图(如果效果不行，重新开个线程)
-        self.eight_eeg_waveform_plot()
+        if self.dataParse_eeg._flag_get_eeg_eight:
+            self.eight_eeg_waveform_plot()
+            self.dataParse_eeg._flag_get_eeg_eight = False
         self.raw_eeg_waveform_plot()
 
     def data_parse_ecg(self):
         for element in self.double_buffer.reader_ecg():
-            self.dataParse_ecg.parseByte(data)
+            self.dataParse_ecg.parseByte(element)
         self.ser_ecg._serial_received_data = False
         #下面是直接调用画图
         self.raw_ecg_waveform_plot()
 
     def data_parse_gsr(self):
         pass
-    
+
     def eight_eeg_waveform_plot(self):
+        temp_list = list()
         temp_list = self.dataParse_eeg.double_queue_parse_data_eeg.reader_ten_eeg()
+        print(temp_list)
         #画8种脑波窗口大小是500
         if (self.current_ten_eeg + len(temp_list)) > 500:
             #当最新取出的数据太多，只取最新的数据
@@ -489,33 +493,33 @@ class Main(MainFrame):
             self.current_ten_eeg = 474  #移出5%的空间(500x0.95-1)
             if self.current_ten_eeg > (500 - len(temp_list)):
                 self.current_ten_eeg = 500 - len(temp_list)
+            srcIndex = originalIndex - self.current_ten_eeg
             i = 0
-            while i < self.current_ten_eeg:
-                srcIndex = i + originalIndex - self.current_ten_eeg
-                self.delta_list[i] = self.delta_list[srcIndex]
-                self.theta_list[i] = self.theta_list[srcIndex]
-                self.lowalpha_list[i] = self.lowalpha_list[srcIndex]
-                self.highalpha_list[i] = self.highalpha_list[srcIndex]
-                self.lowbeta_list[i] = self.lowbeta_list[srcIndex]
-                self.highbeta_list[i] = self.lowbeta_list[srcIndex]
-                self.lowgamma_list[i] = self.lowgamma_list[srcIndex]
-                self.midgamma_list[i] = self.midgamma_list[srcIndex]
-                self.attention_list[i] = self.attention_list[srcIndex]
-                self.meditation_list[i] = self.meditation_list[srcIndex]
+            while i < srcIndex:              
+                del self.delta_list[i]
+                del self.theta_list[i]
+                del self.lowalpha_list[i]
+                del self.highalpha_list[i]
+                del self.lowbeta_list[i]
+                del self.highbeta_list[i]
+                del self.lowgamma_list[i]
+                del self.midgamma_list[i]
+                del self.attention_list[i]
+                del self.meditation_list[i]
                 i = i + 1
         n = 0
         while n < len(temp_list):
-            self.delta_list[self.current_ten_eeg] = temp_list[n]["delta"] / 40000
-            self.theta_list[self.current_ten_eeg] = temp_list[n]["theta"] / 15000
-            self.lowalpha_list[self.current_ten_eeg] = temp_list[n]["lowalpha"] / 4000
-            self.highalpha_list[self.current_ten_eeg] = temp_list[n]["highalpha"] / 3000
-            self.lowbeta_list[self.current_ten_eeg] = temp_list[n]["lowbeta"] / 2000
-            self.highbeta_list[self.current_ten_eeg] = temp_list[n]["highbeta"] / 2000
-            self.lowgamma_list[self.current_ten_eeg] = temp_list[n]["lowgamma"] / 1000
-            self.midgamma_list[self.current_ten_eeg] = temp_list[n]["midgamma"] / 700
-            self.attention_list[self.current_ten_eeg] = temp_list[n]["attention"]
-            self.meditation_list[self.current_ten_eeg] = temp_list[n]["meditation"]
-            self.current_ten_eeg = self.current_ten_eeg + 1
+            self.delta_list.append(temp_list[n]["delta"] / 40000)
+            self.theta_list.append(temp_list[n]["theta"] / 15000)
+            self.lowalpha_list.append(temp_list[n]["lowalpha"] / 4000)
+            self.highalpha_list.append(temp_list[n]["highalpha"] / 3000)
+            self.lowbeta_list.append(temp_list[n]["lowbeta"] / 2000)
+            self.highbeta_list.append(temp_list[n]["highbeta"] / 2000)
+            self.lowgamma_list.append(temp_list[n]["lowgamma"] / 1000)
+            self.midgamma_list.append(temp_list[n]["midgamma"] / 700)
+            self.attention_list.append(temp_list[n]["attention"])
+            self.meditation_list.append(temp_list[n]["meditation"])
+            self.current_ten_eeg += 1
             n = n + 1
         #下面开始触发画图
         self.draw_delta_eeg(self.delta_list)
@@ -537,55 +541,56 @@ class Main(MainFrame):
         self.line_lowgamma.set_ydata(np.ma.array(self.line_lowgamma_x, mask=True)) #清除上次的绘图
         self.line_highgamma.set_ydata(np.ma.array(self.line_highgamma_x, mask=True)) #清除上次的绘图
 
-    def draw_delta_eeg(self, *kw):
+    def draw_delta_eeg(self, kw):
         x = np.arange(0, len(kw), 1)
-        line, = self.Delta_figure.plot(x, kw)
+        line, = self.Delta_figure.plot(x, kw,color = 'red')
         self.line_delta = line
         self.line_delta_x = x
 
-    def draw_theta_eeg(self, *kw):
+    def draw_theta_eeg(self, kw):
         x = np.arange(0, len(kw), 1)
-        line, = self.Theta_figure.plot(x, kw)
+        line, = self.Theta_figure.plot(x, kw,color = 'red')
         self.line_theta = line
         self.line_theta_x = x
 
-    def draw_highalpha_eeg(self, *kw):
+    def draw_highalpha_eeg(self, kw):
         x = np.arange(0, len(kw), 1)
-        line, = self.HighAlpha_figure.plot(x, kw)
+        line, = self.HighAlpha_figure.plot(x, kw,color = 'red')
         self.line_highalpha = line
         self.line_highalpha_x = x
 
-    def draw_lowbeta_eeg(self, *kw):
+    def draw_lowbeta_eeg(self, kw):
         x = np.arange(0, len(kw), 1)
-        line, = self.LowBeta_figure.plot(x, kw)
+        line, = self.LowBeta_figure.plot(x, kw,color = 'red')
         self.line_lowbeta = line
         self.line_lowbeta_x = x
 
-    def draw_highbeta_eeg(self, *kw):
+    def draw_highbeta_eeg(self, kw):
         x = np.arange(0, len(kw), 1)
-        line, = self.HighBeta_figure.plot(x, kw)
+        line, = self.HighBeta_figure.plot(x, kw,color = 'red')
         self.line_highbeta = line
         self.line_highbeta_x = x
 
-    def draw_lowgamma_eeg(self, *kw):
+    def draw_lowgamma_eeg(self, kw):
         x = np.arange(0, len(kw), 1)
-        line, = self.LowGamma_figure.plot(x, kw)
+        line, = self.LowGamma_figure.plot(x, kw,color = 'red')
         self.line_lowgamma = line
         self.line_lowgamma_x = x
 
-    def draw_midgamma_eeg(self, *kw):
+    def draw_midgamma_eeg(self, kw):
         x = np.arange(0, len(kw), 1)
-        line, = self.MiddleGamma_figure.plot(x, kw)
+        line, = self.MiddleGamma_figure.plot(x, kw,color = 'red')
         self.line_midgamma = line
         self.line_midgamma_x = x
 
-    def draw_lowalpha_eeg(self, *kw):
+    def draw_lowalpha_eeg(self, kw):
         x = np.arange(0, len(kw), 1)
-        line, = self.LowAlpha_figure.plot(x, kw)
+        line, = self.LowAlpha_figure.plot(x, kw,color = 'red')
         self.line_lowalpha = line
         self.line_lowalpha_x = x
 
     def raw_eeg_waveform_plot(self):
+        temp_list = list()
         temp_list = self.dataParse_eeg.double_queue_parse_data_eeg.reader_raw_eeg()
         #画原始脑波窗口大小是1000
         if (self.current_raw_eeg + len(temp_list)) > 1000:
@@ -596,23 +601,25 @@ class Main(MainFrame):
             self.current_raw_eeg = 949  #移出5%的空间(1000x0.95-1)
             if self.current_raw_eeg > (1000 - len(temp_list)):
                 self.current_raw_eeg = 1000 - len(temp_list)
+            srcIndex = originalIndex - self.current_raw_eeg
             i = 0
-            while i < self.current_raw_eeg:
-                srcIndex = i + originalIndex - self.current_raw_eeg
-                self.raweeg_list[i] = self.raweeg_list[srcIndex]
+            while i < srcIndex:
+                del self.raweeg_list[i]
                 i = i + 1
         n = 0
         while n < len(temp_list):
-            self.raweeg_list[self.current_raw_eeg] = temp_list[n] / 40000
-            self.current_raw_eeg = self.current_raw_eeg + 1
-            n = n + 1
+            self.raweeg_list.append(temp_list[n] / 5)
+            self.current_raw_eeg += 1
+            n += 1
         #下面开始触发画图
-        x = np.arange(0, len(raweeg_list), 1)
-        line, = self.raw_eeg_figure.plot(x, raweeg_list)
-        self.wave_raw_eeg.canvas_raweeg.show()  #刷新绘图
-        self.line.set_ydata(np.ma.array(x, mask=True)) #清除上次的绘图
+        if len(self.raweeg_list) > 0:
+            x = np.arange(0, len(self.raweeg_list), 1)
+            line, = self.raw_eeg_figure.plot(x, self.raweeg_list,color = 'red')
+            self.wave_raw_eeg.canvas_raweeg.show()  #刷新绘图
+            line.set_ydata(np.ma.array(x, mask=True)) #清除上次的绘图
 
     def raw_ecg_waveform_plot(self):
+        temp_list = list()
         temp_list = self.dataParse_ecg.double_queue_parse_data_ecg.reader_raw_ecg()
         #画原始心电窗口大小是1000
         if (self.current_raw_ecg + len(temp_list)) > 1000:
@@ -623,17 +630,17 @@ class Main(MainFrame):
             self.current_raw_ecg = 949  #移出5%的空间(1000x0.95-1)
             if self.current_raw_ecg > (1000 - len(temp_list)):
                 self.current_raw_ecg = 1000 - len(temp_list)
+            srcIndex = originalIndex - self.current_raw_ecg
             i = 0
-            while i < self.current_raw_ecg:
-                srcIndex = i + originalIndex - self.current_raw_ecg
+            while i < srcIndex:               
                 #self.rawecg_list[i] = self.rawecg_list[srcIndex]
-                self.rawecgTemp_list[i] = self.rawecgTemp_list[srcIndex]
+                del self.rawecgTemp_list[i]
                 #self.rawecglowtemp_list[i] = self.rawecglowtemp_list[srcIndex]
                 i = i + 1
         n = 0
         while n < len(temp_list):
             #self.rawecg_list[self.current_raw_ecg] = temp_list[n] / 36
-            self.rawecgTemp_list[self.current_raw_ecg] = temp_list[n] / 36
+            self.rawecgTemp_list.append(temp_list[n] / 36)
             self.current_raw_ecg = self.current_raw_ecg + 1
             n = n + 1
         #下面是心电数据滤波处理（可能有问题）
@@ -641,26 +648,29 @@ class Main(MainFrame):
         tempECGArry = self.rawecgTemp_list
         arry = self.ecgfilter.filter(tempECGArry)
         self.rawecg_list = arry
+        self.rawecglowtemp_list.clear()
         i = 0
         for element in self.rawecg_list:
             if element > -1500 and element < 0:
                 element = element / 2
             if element > 0:
                 element = element / 3
-            self.rawecglowtemp_list[i] = element
+            self.rawecglowtemp_list.append(element)
             i = i + 1
         averageArry1 = list()
         averageArry1 = self.rawecglowtemp_list
         averageArry = self.ecgfilter.averagefilter(N = 15, kw = averageArry1)
+        self.rawecg_list.clear()
         t = 0
         while t < len(averageArry):
-            self.rawecg_list[t] = averageArry[t]
+            self.rawecg_list.append(averageArry[t])
             t = t + 1
         #下面开始触发画图
-        x = np.arange(0, len(rawecg_list), 1)
-        line, = self.ecg_figure.plot(x, rawecg_list)
-        self.wave_ecg.canvas_ecg.show()  #刷新绘图
-        self.line.set_ydata(np.ma.array(x, mask=True)) #清除上次的绘图
+        if len(self.rawecg_list) > 0:
+            x = np.arange(0, len(self.rawecg_list), 1)
+            line, = self.ecg_figure.plot(x, self.rawecg_list,color = 'red')
+            self.wave_ecg.canvas_ecg.show()  #刷新绘图
+            line.set_ydata(np.ma.array(x, mask=True)) #清除上次的绘图
 
     def raw_gsr_waveform_plot(self):
         pass

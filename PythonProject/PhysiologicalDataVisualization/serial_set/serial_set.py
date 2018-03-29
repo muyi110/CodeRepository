@@ -74,7 +74,7 @@ class SerialSet():
                 if self._is_connected_temp != self._is_connected:
                     func(self._is_connected)
                 self._is_connected_temp = self._is_connected
-                time.sleep(0.8)
+                time.sleep(1)
             else:
                 break
 
@@ -111,16 +111,13 @@ class SerialSet():
             if self._is_serial_exist:
                 if self._serial_received_data:   #判断串口是否收到数据
                     try:
-                        func()
-                        #self._serial_received_data = False
+                        func(1)
                         time.sleep(0.01)
                     except Exception as e:
                         self._serial_received_data = False
                 time.sleep(0.01)
             else:
                 break
-
-
 
     def find_usb_tty(self, vendor_id=None, product_id=None):
         """查找Linux下的串口设备"""
