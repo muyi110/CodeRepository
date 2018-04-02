@@ -87,6 +87,8 @@ class Main(MainFrame):
 
         self.y_eeg = [None]*1000
         self.line_eeg, = self.raw_eeg_figure.plot(np.arange(0,1000,1), self.y_eeg,color = 'red')
+        self.y_ecg = [None]*1000
+        self.line_ecg, = self.ecg_figure.plot(np.arange(0,1000,1), self.y_ecg,color = 'red')
 
     def find_all_devices(self):
         """线程检测连接设备的状态"""
@@ -592,7 +594,7 @@ class Main(MainFrame):
                 i = i + 1
         n = 0
         while n < len(temp_list):
-            self.raweeg_list.append(temp_list[n] / 5)
+            self.raweeg_list.append(temp_list[n] / 4)
             self.current_raw_eeg += 1
             n += 1
         #下面开始触发画图
@@ -652,10 +654,11 @@ class Main(MainFrame):
             t = t + 1
         #下面开始触发画图
         if len(self.rawecg_list) > 0:
-            x = np.arange(0, len(self.rawecg_list), 1)
-            line, = self.ecg_figure.plot(x, self.rawecg_list,color = 'red')
+            self.y_ecg = self.rawecg_list[:]    #更新数据
+            if len(self.y_ecg) < 1000:
+                self.y_ecg += [None]*(1000 - len(self.y_ecg))
+            self.line_ecg.set_ydata(self.y_ecg)
             self.wave_ecg.canvas_ecg.show()  #刷新绘图
-            line.set_ydata(np.ma.array(x, mask=True)) #清除上次的绘图
 
     def raw_gsr_waveform_plot(self):
         pass
@@ -668,14 +671,14 @@ class Main(MainFrame):
                 self.dataParse_eeg._flag_get_eeg_eight = False
             self.raw_eeg_waveform_plot()
             self._data_parse_complete_flag_eeg = False
-        self.root.after(50, self.eeg_siganl_plot)
+        self.root.after(20, self.eeg_siganl_plot)
 
     def ecg_siganl_plot(self):
         #下面是直接调用画图
         if self._data_parse_complete_flag_ecg:
             self.raw_ecg_waveform_plot()
             self._data_parse_complete_flag_ecg = False
-        self.root.after(200, self.ecg_siganl_plot)
+        self.root.after(50, self.ecg_siganl_plot)
 
 
 
