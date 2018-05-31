@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #此模块为主程序模块
 import time
 import logging

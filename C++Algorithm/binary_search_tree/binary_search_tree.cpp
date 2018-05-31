@@ -165,7 +165,25 @@ searchTree Delete(int x, searchTree T)
     }
     return T;
 }
-
+//下面是打印树的函数(未完成)
+void print_tree(searchTree T, int N)
+{
+    if(T == NULL)
+        std::cout << "Empty Tree" << std::endl;
+    else
+    {
+        for(int i = 0; i < N; ++i)
+            std::cout << " " ;
+        std::cout << T->element;
+        if(T->left)
+        {
+            std::cout << std::endl;
+            print_tree(T->left, N-2);
+        }
+        if(T->right)
+            print_tree(T->right, N+2);
+    }
+}
 //下面是main函数测试
 int main(int argc, char **argv)
 {
@@ -179,6 +197,9 @@ int main(int argc, char **argv)
     Insert(5, T);
     Insert(3, T);
     Insert(4, T);
+    //Delete(8,T);
+    print_tree(T, 15);
+    std::cout << std::endl;
     pos = FindMin(T);
     std::cout << "min: " << pos->element << std::endl;
     std::cout << "Max: " << FindMax(T)->element << std::endl;
