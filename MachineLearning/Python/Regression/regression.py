@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+# -*- coding:UTF-8 -*-
 import numpy
 import matplotlib.pyplot as plt
+import time
 # The algorithm is off-line
 
 def loadDataSet(fileName):
@@ -89,9 +91,10 @@ def lwlrPlot(fig, xArr, yArr):
 
 if __name__ == '__main__':
     xArr, yArr = loadDataSet('ex0.txt')
+    t0 = time.perf_counter()
     fig = plt.figure()
     standPlot(fig, xArr, yArr)
     lwlrPlot(fig, xArr, yArr)
+    elapsed = time.perf_counter() - t0
+    print('\nOFF-Line algorithm completed time: %0.8fs' % elapsed)
     plt.show()
-
-    print(globals())
