@@ -3,6 +3,8 @@
 '''
 Buliding a logistic regression classifier to recognize cats
 '''
+import os
+import glob
 import numbers
 import numpy as np
 import matplotlib.pyplot as plt
@@ -197,10 +199,42 @@ if __name__ == '__main__':
     print ("y = " + str(test_set_y[0,index]) + ", you predicted that it is a \"" + classes[int(d["Y_prediction_test"][0,index])].decode("utf-8") +  "\" picture.")
     #plot the cost function 
     costs = np.squeeze(d['costs'])#Remove single-dimensional entries from the shape of an array.
-    plt.plot(costs)
-    plt.ylabel('cost')
-    plt.xlabel('iterations(per hundreds)')
-    plt.title('learning rate = '+str(d['learning_rate']))
-    plt.show()
+    fig = plt.figure()
+    costplot = fig.add_subplot(121)
+    costplot.plot(costs)
+    costplot.set_ylabel('cost')
+    costplot.set_xlabel('iterations(per hundreds)')
+    costplot.set_title('learning rate = '+str(d['learning_rate']))
     #for different learning rate
-
+    learning_rates = [0.01, 0.001, 0.0001]
+    models = {}
+    for i in learning_rates:
+        print('-'*50)
+        print('learning rate is: '+str(i))
+        models[str(i)] = model(train_set_x, train_set_y, test_set_x, test_set_y, num_iterations = 2000, learning_rate = i, print_cost = False)
+        print('\n'+'-'*50)
+    plots = fig.add_subplot(122)
+    for i in learning_rates:
+        plots.plot(np.squeeze(models[str(i)]['costs']), label=str(models[str(i)]['learning_rate']))
+    plots.set_ylabel('cost')
+    plots.set_xlabel('iterations')
+    legend = plots.legend(loc='upper center', shadow=False)
+    plt.show()
+    #Test with my own image
+    my_image_path = glob.glob(os.path.join('./images', '*'))#list
+    fig = plt.figure()
+    number = 0
+    for fname in my_image_path:
+        number += 1
+        image = np.array(ndimage.imread(fname, flatten=False))
+        my_image = scipy.misc.imresize(image, size=(num_px,num_px)).reshape((1, num_px*num_px*3)).T
+        my_predicted_image = predict(d['w'],d['b'],my_image)
+        if len(my_image_path)%4 == 0:
+            imageshow_rows = int(len(my_image_path)/2)
+        else:
+            imageshow_rows = int(len(my_image_path)/2)+1
+        imageplot = fig.add_subplot(imageshow_rows,2,number)
+        imageplot.imshow(image)
+        print('-'*50)
+        print('y = '+str(np.squeeze(my_predicted_image))+' '+classes[int(np.squeeze(my_predicted_image)),].decode("utf-8"))
+    plt.show()
