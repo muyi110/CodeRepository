@@ -35,11 +35,11 @@ def initialize_parameters(layer_dims):
     np.random.seed(3)
     parameters = {}
     L = len(layer_dims)
-    for l in range(1, L-1):
-        parameters['W'+str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1]) * np.sqrt(2./layer_dims[l-1])
+    for l in range(1, L):
+        parameters['W'+str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1]) * np.sqrt(1./layer_dims[l-1])
         parameters['b'+str(l)] = np.zeros((layer_dims[l], 1))
-    parameters['W'+str(L-1)] = np.random.randn(layer_dims[L-1], layer_dims[L-2]) * np.sqrt(1./layer_dims[L-2])
-    parameters['b'+str(l)] = np.zeros((layer_dims[L-1], 1))
+    #parameters['W'+str(L-1)] = np.random.randn(layer_dims[L-1], layer_dims[L-2]) * np.sqrt(1./layer_dims[L-2])
+    #parameters['b'+str(L-1)] = np.zeros((layer_dims[L-1], 1))
     return parameters
 def forward_propagation(X, parameters):
     '''
@@ -80,17 +80,17 @@ def backward_propagation(X, Y, cache):
     '''
     m = X.shape[1]
     (Z1, A1, W1, b1, Z2, A2, W2, b2, Z3, A3, W3, b3) = cache
-    dZ3 = 1. / m * (A3 - Y)
-    dW3 = np.dot(dZ3, A2.T)
-    db3 = np.sum(dZ3, axis=1, keepdims=True)
+    dZ3 = (A3 - Y)
+    dW3 = 1. / m * np.dot(dZ3, A2.T)
+    db3 = 1. / m * np.sum(dZ3, axis=1, keepdims=True)
     dA2 = np.dot(W3.T, dZ3)
     dZ2 = np.multiply(dA2, np.int64(A2>0))
-    dW2 = np.dot(dZ2, A1.T)
-    db2 = np.sum(dZ2, axis=1, keepdims=True)
+    dW2 = 1. / m * np.dot(dZ2, A1.T)
+    db2 = 1. / m * np.sum(dZ2, axis=1, keepdims=True)
     dA1 = np.dot(W2.T, dZ2)
     dZ1 = np.multiply(dA1, np.int64(A1>0))
-    dW1 = np.dot(dZ1, X.T)
-    db1 = np.sum(dZ1, axis=1, keepdims=True)
+    dW1 = 1. / m * np.dot(dZ1, X.T)
+    db1 = 1. / m * np.sum(dZ1, axis=1, keepdims=True)
     gradients = {'dZ3':dZ3, 'dW3':dW3, 'db3':db3,
                  'dA2':dA2, 'dZ2':dZ2, 'dW2':dW2, 'db2':db2,
                  'dA1':dA1, 'dZ1':dZ1, 'dW1':dW1, 'db1':db1
