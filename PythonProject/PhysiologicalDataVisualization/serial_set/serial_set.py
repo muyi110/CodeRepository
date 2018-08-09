@@ -95,7 +95,7 @@ class SerialSet():
                         if data:
                             func(data)
                     time.sleep(0.01)
-                except Exception as e:
+                except Exception:
                     self._is_connected = False
                     self._is_serial_exist = False
                     self._serial = None
@@ -113,7 +113,7 @@ class SerialSet():
                     try:
                         func(1)
                         time.sleep(0.01)
-                    except Exception as e:
+                    except Exception:
                         self._serial_received_data = False
                 time.sleep(0.01)
             else:
@@ -132,7 +132,7 @@ class SerialSet():
                         for fn in glob.glob(os.path.join(sdn, "*")):
                             if re.search(r"\/ttyUSB[0-9]+$", fn):
                                 tty_devs.append(os.path.join("/dev", os.path.basename(fn)))
-            except Exception as ex:
+            except Exception:
                 pass
         return tty_devs
 

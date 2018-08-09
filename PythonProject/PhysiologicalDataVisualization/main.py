@@ -107,33 +107,33 @@ class Main(MainFrame):
         """检查串口设备"""
         try:
             if platform.system() == "Windows":
-                self.temp_serial = list()
+                temp_serial = list()
                 for com in list(list_ports.comports()):
                     strCom = com[0] + ": " + com[1][:-7]
-                    self.temp_serial.append(strCom)
-                for item in self.temp_serial:
+                    temp_serial.append(strCom)
+                for item in temp_serial:
                     if item not in self.serial_listbox_eeg:
                         self.eeg_frm_l_listbox.insert("end", item)
                 for item in self.serial_listbox_eeg:
-                    if item not in self.temp_serial:
+                    if item not in temp_serial:
                         size = self.eeg_frm_l_listbox.size()
                         index = list(self.eeg_frm_l_listbox.get(
                             0, size)).index(item)
                         self.eeg_frm_l_listbox.delete(index)
-                self.serial_listbox_eeg = self.temp_serial
+                self.serial_listbox_eeg = temp_serial
 
             elif platform.system() == "Linux":
-                self.temp_serial = list()
-                self.temp_serial = self.find_usb_tty()
-                for item in self.temp_serial:
+                temp_serial = list()
+                temp_serial = self.find_usb_tty()
+                for item in temp_serial:
                     if item not in self.serial_listbox_eeg:
                         self.eeg_frm_l_listbox.insert("end", item)
                 for item in self.serial_listbox_eeg:
-                    if item not in self.temp_serial:
+                    if item not in temp_serial:
                         index = list(self.eeg_frm_l_listbox.get(
                             0, self.eeg_frm_l_listbox.size())).index(item)
                         self.eeg_frm_l_listbox.delete(index)
-                self.serial_listbox_eeg = self.temp_serial
+                self.serial_listbox_eeg = temp_serial
         except Exception as e:
             logging.error(e)
 
@@ -141,33 +141,33 @@ class Main(MainFrame):
         """检查串口设备"""
         try:
             if platform.system() == "Windows":
-                self.temp_serial = list()
+                temp_serial = list()
                 for com in list(list_ports.comports()):
                     strCom = com[0] + ": " + com[1][:-7]
-                    self.temp_serial.append(strCom)
-                for item in self.temp_serial:
+                    temp_serial.append(strCom)
+                for item in temp_serial:
                     if item not in self.serial_listbox_ecg:
                         self.ecg_frm_l_listbox.insert("end", item)
                 for item in self.serial_listbox_ecg:
-                    if item not in self.temp_serial:
+                    if item not in temp_serial:
                         size = self.ecg_frm_l_listbox.size()
                         index = list(self.ecg_frm_l_listbox.get(
                             0, size)).index(item)
                         self.ecg_frm_l_listbox.delete(index)
-                self.serial_listbox_ecg = self.temp_serial
+                self.serial_listbox_ecg = temp_serial
 
             elif platform.system() == "Linux":
-                self.temp_serial = list()
-                self.temp_serial = self.find_usb_tty()
-                for item in self.temp_serial:
+                temp_serial = list()
+                temp_serial = self.find_usb_tty()
+                for item in temp_serial:
                     if item not in self.serial_listbox_ecg:
                         self.ecg_frm_l_listbox.insert("end", item)
                 for item in self.serial_listbox_ecg:
-                    if item not in self.temp_serial:
+                    if item not in temp_serial:
                         index = list(self.ecg_frm_l_listbox.get(
                             0, self.ecg_frm_l_listbox.size())).index(item)
                         self.ecg_frm_l_listbox.delete(index)
-                self.serial_listbox_ecg = self.temp_serial
+                self.serial_listbox_ecg = temp_serial
         except Exception as e:
             logging.error(e)
 
@@ -175,33 +175,33 @@ class Main(MainFrame):
         """检查串口设备"""
         try:
             if platform.system() == "Windows":
-                self.temp_serial = list()
+                temp_serial = list()
                 for com in list(list_ports.comports()):
                     strCom = com[0] + ": " + com[1][:-7]
-                    self.temp_serial.append(strCom)
-                for item in self.temp_serial:
+                    temp_serial.append(strCom)
+                for item in temp_serial:
                     if item not in self.serial_listbox_gsr:
                         self.gsr_frm_l_listbox.insert("end", item)
                 for item in self.serial_listbox_gsr:
-                    if item not in self.temp_serial:
+                    if item not in temp_serial:
                         size = self.gsr_frm_l_listbox.size()
                         index = list(self.gsr_frm_l_listbox.get(
                             0, size)).index(item)
                         self.gsr_frm_l_listbox.delete(index)
-                self.serial_listbox_gsr = self.temp_serial
+                self.serial_listbox_gsr = temp_serial
 
             elif platform.system() == "Linux":
-                self.temp_serial = list()
-                self.temp_serial = self.find_usb_tty()
-                for item in self.temp_serial:
+                temp_serial = list()
+                temp_serial = self.find_usb_tty()
+                for item in temp_serial:
                     if item not in self.serial_listbox_gsr:
                         self.gsr_frm_l_listbox.insert("end", item)
                 for item in self.serial_listbox_gsr:
-                    if item not in self.temp_serial:
+                    if item not in temp_serial:
                         index = list(self.gsr_frm_l_listbox.get(
                             0, self.gsr_frm_l_listbox.size())).index(item)
                         self.gsr_frm_l_listbox.delete(index)
-                self.serial_listbox_gsr = self.temp_serial
+                self.serial_listbox_gsr = temp_serial
         except Exception as e:
             logging.error(e)
 
@@ -245,16 +245,16 @@ class Main(MainFrame):
             try:
                 serial_index = self.eeg_frm_l_listbox.curselection() #获取当前选择的串口号
                 if serial_index:
-                    self.current_serial_str = self.eeg_frm_l_listbox.get(
+                    self.current_serial_str_eeg = self.eeg_frm_l_listbox.get(
                         serial_index)
                 else:
-                    self.current_serial_str = self.eeg_frm_l_listbox.get(
+                    self.current_serial_str_eeg = self.eeg_frm_l_listbox.get(
                         self.eeg_frm_l_listbox.size() - 1)
 
                 if platform.system() == "Windows":
-                    self.port = self.current_serial_str.split(":")[0]
+                    self.port = self.current_serial_str_eeg.split(":")[0]
                 elif platform.system() == "Linux":
-                    self.port = self.current_serial_str
+                    self.port = self.current_serial_str_eeg
                 self.baudrate = self.eeg_frm_left_combobox_baudrate.get()
                 self.parity = "N"
                 self.databit = "8"
@@ -269,7 +269,7 @@ class Main(MainFrame):
                 logging.error(e)
                 try:
                     self.eeg_status_label["text"] = "Open [{0}] Failed!".format(
-                        self.current_serial_str)
+                        self.current_serial_str_eeg)
                     self.eeg_status_label["fg"] = "#DC143C"
                 except Exception as ex:
                     logging.error(ex)
@@ -287,7 +287,7 @@ class Main(MainFrame):
             self.ser_eeg.connect()
             if self.ser_eeg._is_connected:
                 self.eeg_status_label["text"] = "Open [{0}] Successful!".format(
-                    self.current_serial_str)
+                    self.current_serial_str_eeg)
                 self.eeg_status_label["fg"] = "#66CD00"
                 self.eeg_left_btn["text"] = "Close"
                 self.eeg_left_btn["bg"] = "#F08080"
@@ -295,7 +295,7 @@ class Main(MainFrame):
                 self.ser_eeg.on_data_received_parse(self.data_parse_eeg)#串口数据解析线程
             else:
                 self.eeg_status_label["text"] = "Open [{0}] Failed!".format(
-                    self.current_serial_str)
+                    self.current_serial_str_eeg)
                 self.eeg_status_label["fg"] = "#DC143C"
         else:
             self.ser_eeg.disconnect()
@@ -310,16 +310,16 @@ class Main(MainFrame):
             try:
                 serial_index = self.ecg_frm_l_listbox.curselection()
                 if serial_index:
-                    self.current_serial_str = self.ecg_frm_l_listbox.get(
+                    self.current_serial_str_ecg = self.ecg_frm_l_listbox.get(
                         serial_index)
                 else:
-                    self.current_serial_str = self.ecg_frm_l_listbox.get(
+                    self.current_serial_str_ecg = self.ecg_frm_l_listbox.get(
                         self.ecg_frm_l_listbox.size() - 1)
 
                 if platform.system() == "Windows":
-                    self.port = self.current_serial_str.split(":")[0]
+                    self.port = self.current_serial_str_ecg.split(":")[0]
                 elif platform.system() == "Linux":
-                    self.port = self.current_serial_str
+                    self.port = self.current_serial_str_ecg
                 self.baudrate = self.ecg_frm_left_combobox_baudrate.get()
                 self.parity = "N"
                 self.databit = "8"
@@ -334,7 +334,7 @@ class Main(MainFrame):
                 logging.error(e)
                 try:
                     self.ecg_status_label["text"] = "Open [{0}] Failed!".format(
-                        self.current_serial_str)
+                        self.current_serial_str_ecg)
                     self.ecg_status_label["fg"] = "#DC143C"
                 except Exception as ex:
                     logging.error(ex)
@@ -352,7 +352,7 @@ class Main(MainFrame):
             self.ser_ecg.connect()
             if self.ser_ecg._is_connected:
                 self.ecg_status_label["text"] = "Open [{0}] Successful!".format(
-                    self.current_serial_str)
+                    self.current_serial_str_ecg)
                 self.ecg_status_label["fg"] = "#66CD00"
                 self.ecg_left_btn["text"] = "Close"
                 self.ecg_left_btn["bg"] = "#F08080"
@@ -360,7 +360,7 @@ class Main(MainFrame):
                 self.ser_ecg.on_data_received_parse(self.data_parse_ecg)#串口数据解析线程
             else:
                 self.ecg_status_label["text"] = "Open [{0}] Failed!".format(
-                    self.current_serial_str)
+                    self.current_serial_str_ecg)
                 self.ecg_status_label["fg"] = "#DC143C"
         else:
             self.ser_ecg.disconnect()
@@ -375,16 +375,16 @@ class Main(MainFrame):
             try:
                 serial_index = self.gsr_frm_l_listbox.curselection()
                 if serial_index:
-                    self.current_serial_str = self.gsr_frm_l_listbox.get(
+                    self.current_serial_str_gsr = self.gsr_frm_l_listbox.get(
                         serial_index)
                 else:
-                    self.current_serial_str = self.gsr_frm_l_listbox.get(
+                    self.current_serial_str_gsr = self.gsr_frm_l_listbox.get(
                         self.gsr_frm_l_listbox.size() - 1)
 
                 if platform.system() == "Windows":
-                    self.port = self.current_serial_str.split(":")[0]
+                    self.port = self.current_serial_str_gsr.split(":")[0]
                 elif platform.system() == "Linux":
-                    self.port = self.current_serial_str
+                    self.port = self.current_serial_str_gsr
                 self.baudrate = self.gsr_frm_left_combobox_baudrate.get()
                 self.parity = "N"
                 self.databit = "8"
@@ -399,7 +399,7 @@ class Main(MainFrame):
                 logging.error(e)
                 try:
                     self.gsr_status_label["text"] = "Open [{0}] Failed!".format(
-                        self.current_serial_str)
+                        self.current_serial_str_gsr)
                     self.gsr_status_label["fg"] = "#DC143C"
                 except Exception as ex:
                     logging.error(ex)
@@ -417,7 +417,7 @@ class Main(MainFrame):
             self.ser_gsr.connect()
             if self.ser_gsr._is_connected:
                 self.gsr_status_label["text"] = "Open [{0}] Successful!".format(
-                    self.current_serial_str)
+                    self.current_serial_str_gsr)
                 self.gsr_status_label["fg"] = "#66CD00"
                 self.gsr_left_btn["text"] = "Close"
                 self.gsr_left_btn["bg"] = "#F08080"
@@ -425,7 +425,7 @@ class Main(MainFrame):
                 self.ser_gsr.on_data_received_parse(self.data_parse_gsr) #串口数据解析线程
             else:
                 self.gsr_status_label["text"] = "Open [{0}] Failed!".format(
-                    self.current_serial_str)
+                    self.current_serial_str_gsr)
                 self.gsr_status_label["fg"] = "#DC143C"
         else:
             self.ser_gsr.disconnect()
@@ -457,13 +457,13 @@ class Main(MainFrame):
         self.ser_eeg._serial_received_data = False
         self._data_parse_complete_flag_eeg = True
 
-    def data_parse_ecg(self):
+    def data_parse_ecg(self,data):
         for element in self.double_buffer.reader_ecg():
             self.dataParse_ecg.parseByte(element)
         self.ser_ecg._serial_received_data = False
         self._data_parse_complete_flag_ecg = True
 
-    def data_parse_gsr(self):
+    def data_parse_gsr(self,data):
         pass
 
     def eight_eeg_waveform_plot(self):
@@ -628,38 +628,45 @@ class Main(MainFrame):
         n = 0
         while n < len(temp_list):
             #self.rawecg_list[self.current_raw_ecg] = temp_list[n] / 36
-            self.rawecgTemp_list.append(temp_list[n] / 36)
+            self.rawecgTemp_list.append((temp_list[n] / 6)-62)
             self.current_raw_ecg = self.current_raw_ecg + 1
             n = n + 1
-        #下面是心电数据滤波处理（可能有问题）
-        tempECGArry = list()
-        tempECGArry = self.rawecgTemp_list
-        arry = self.ecgfilter.filter(tempECGArry)
-        self.rawecg_list = arry
-        self.rawecglowtemp_list.clear()
-        i = 0
-        for element in self.rawecg_list:
-            if element > -1500 and element < 0:
-                element = element / 2
-            if element > 0:
-                element = element / 3
-            self.rawecglowtemp_list.append(element)
-            i = i + 1
-        averageArry1 = list()
-        averageArry1 = self.rawecglowtemp_list
-        averageArry = self.ecgfilter.averagefilter(N = 15, kw = averageArry1)
-        self.rawecg_list.clear()
-        t = 0
-        while t < len(averageArry):
-            self.rawecg_list.append(averageArry[t])
-            t = t + 1
         #下面开始触发画图
-        if len(self.rawecg_list) > 0:
-            self.y_ecg = self.rawecg_list[:]    #更新数据
+        if len(self.rawecgTemp_list) > 0:
+            self.y_ecg = self.rawecgTemp_list[:]    #更新数据
             if len(self.y_ecg) < 1000:
                 self.y_ecg += [None]*(1000 - len(self.y_ecg))
             self.line_ecg.set_ydata(self.y_ecg)
             self.wave_ecg.canvas_ecg.show()  #刷新绘图
+        #下面是心电数据滤波处理（可能有问题）
+        #tempECGArry = list()
+        #tempECGArry = self.rawecgTemp_list
+        #arry = self.ecgfilter.filter(tempECGArry)
+        #self.rawecg_list = arry
+        #self.rawecglowtemp_list.clear()
+        #i = 0
+        #for element in self.rawecg_list:
+        #    if element > -1500 and element < 0:
+        #        element = element / 2
+        #    if element > 0:
+        #        element = element / 3
+        #    self.rawecglowtemp_list.append(element)
+        #    i = i + 1
+        #averageArry1 = list()
+        #averageArry1 = self.rawecglowtemp_list
+        #averageArry = self.ecgfilter.averagefilter(N = 15, kw = averageArry1)
+        #self.rawecg_list.clear()
+        #t = 0
+        #while t < len(averageArry):
+        #    self.rawecg_list.append(averageArry[t])
+        #    t = t + 1
+        #下面开始触发画图
+        #if len(self.rawecg_list) > 0:
+        #    self.y_ecg = self.rawecg_list[:]    #更新数据
+        #    if len(self.y_ecg) < 1000:
+        #        self.y_ecg += [None]*(1000 - len(self.y_ecg))
+        #    self.line_ecg.set_ydata(self.y_ecg)
+        #    self.wave_ecg.canvas_ecg.show()  #刷新绘图
 
     def raw_gsr_waveform_plot(self):
         pass

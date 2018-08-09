@@ -1,13 +1,13 @@
 #此模块为双缓冲模块，用于数据处理，采用两个list实现
 import threading
-import queue
+import queue 
 
 class BufferQueue():
     """采用自带的Queue模块"""
     def __init__(self, maxsize=2048):
-        self.queue_eeg = Queue(maxsize)
-        self.queue_ecg = Queue(maxsize)
-        self.queue_gsr = Queue(maxsize)
+        self.queue_eeg = queue.Queue(maxsize)
+        self.queue_ecg = queue.Queue(maxsize)
+        self.queue_gsr = queue.Queue(maxsize)
 
     def writer_eeg(self, data):
         self.queue_eeg.put(data, block=1)
@@ -20,17 +20,17 @@ class BufferQueue():
 
     def reader_eeg(self):
         temp = self.queue_eeg.get(block=1)
-        queue_eeg.task_done()
+        self.queue_eeg.task_done()
         return temp
     
-    def reader_eeg(self):
+    def reader_ecg(self):
         temp = self.queue_ecg.get(block=1)
-        queue_ecg.task_done()
+        self.queue_ecg.task_done()
         return temp
 
-    def reader_eeg(self):
+    def reader_gsr(self):
         temp = self.queue_gsr.get(block=1)
-        queue_gsr.task_done()
+        self.queue_gsr.task_done()
         return temp
 
 class DoubleBufferQueue():
@@ -259,7 +259,7 @@ class DoubleBufferQueue_ParseData_ecg():
                 self._flag_heartValue = False
             else:
                 self.heartValue_list = self.heartValue_list0
-                self.rheartValue_list1.clear()
+                self.heartValue_list1.clear()
                 self._flag_heartValue = True
         finally:
             lock_heartValue_.release()

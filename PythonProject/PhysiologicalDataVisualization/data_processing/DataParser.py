@@ -113,37 +113,37 @@ class DataParserEEG():
                         lowOrderByte = self.payload[i + 2]
                         delta = (highOrderByte << 16) | (midOrderByte << 8) | lowOrderByte
                         ten_eeg_dict['delta'] = delta         #这里存放delta波
-                        highOrder = self.payload[i + 3]
+                        highOrderByte = self.payload[i + 3]
                         midOrderByte = self.payload[i + 4]
                         lowOrderByte = self.payload[i + 5]
                         theta = (highOrderByte << 16) | (midOrderByte << 8) | lowOrderByte
                         ten_eeg_dict['theta'] = theta        #这里存放theta波
-                        highOrder = self.payload[i + 6]
+                        highOrderByte = self.payload[i + 6]
                         midOrderByte = self.payload[i + 7]
                         lowOrderByte = self.payload[i + 8]
                         lowalpha = (highOrderByte << 16) | (midOrderByte << 8) | lowOrderByte
                         ten_eeg_dict['lowalpha'] = lowalpha  #这里存放lowalpha波
-                        highOrder = self.payload[i + 9]
+                        highOrderByte = self.payload[i + 9]
                         midOrderByte = self.payload[i + 10]
                         lowOrderByte = self.payload[i + 11]
                         highalpha = (highOrderByte << 16) | (midOrderByte << 8) | lowOrderByte
                         ten_eeg_dict['highalpha'] = highalpha #这里存放highalpha波
-                        highOrder = self.payload[i + 12]
+                        highOrderByte = self.payload[i + 12]
                         midOrderByte = self.payload[i + 13]
                         lowOrderByte = self.payload[i + 14]
                         lowbeta = (highOrderByte << 16) | (midOrderByte << 8) | lowOrderByte
                         ten_eeg_dict['lowbeta'] = lowbeta    #这里存放lowbeta波
-                        highOrder = self.payload[i + 15]
+                        highOrderByte = self.payload[i + 15]
                         midOrderByte = self.payload[i + 16]
                         lowOrderByte = self.payload[i + 17]
                         highbeta = (highOrderByte << 16) | (midOrderByte << 8) | lowOrderByte
                         ten_eeg_dict['highbeta'] = highbeta  #这里存放highbeta波
-                        highOrder = self.payload[i + 18]
+                        highOrderByte = self.payload[i + 18]
                         midOrderByte = self.payload[i + 19]
                         lowOrderByte = self.payload[i + 20]
                         lowgamma = (highOrderByte << 16) | (midOrderByte << 8) | lowOrderByte
                         ten_eeg_dict['lowgamma'] = lowgamma  #这里存放lowgamma波
-                        highOrder = self.payload[i + 21]
+                        highOrderByte = self.payload[i + 21]
                         midOrderByte = self.payload[i + 22]
                         lowOrderByte = self.payload[i + 23]
                         midgamma = (highOrderByte << 16) | (midOrderByte << 8) | lowOrderByte
@@ -166,8 +166,22 @@ class DataParserEEG():
             self._flag_get_ten_eeg = False
             self._flag_get_eeg_eight = True
         self.parserStatus = self.PARSER_STATE_SYNC
-
+# Used for AD8235, if used change "DataParserECG_AD8235" to "DataParserECG"
 class DataParserECG():
+    def __init__(self):
+        self.SPACE = 0x20
+        self.rawWaveData = 0
+        self.double_queue_parse_data_ecg = DoubleBufferQueue_ParseData_ecg() #创建解析后的数据双缓冲实例
+    def parseByte(self, data):
+        if (data >= 0x30 and data <= 0x39) or data == self.SPACE or data == 0x0D or data == 0x0A:
+            if data >= 0x30 and data <= 0x39:
+                self.rawWaveData = (self.rawWaveData * 10) + (data - 48)
+            elif data == self.SPACE or data == 0x0D :
+                self.double_queue_parse_data_ecg.writer_raw_ecg(self.rawWaveData)  #这里存放原始心电数据
+                self.rawWaveData = 0
+
+# Used for BMD101, if used change "DataParserECG_BMD101" to "DataParserECG"
+class DataParserECG_BMD101():
     def __init__(self):
         self.PARSER_CODE_HEARTRATE = 3   #心率值
         self.PARSER_CODE_POOR_SIGNAL = 2
