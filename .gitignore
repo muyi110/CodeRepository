@@ -1,8 +1,8 @@
 C++LearningDemo/
 C++Primer5th_answer/
 PythonLearningDemo/
-PythonProject/MultichannelBiosignalEmotionRecognition/DEAP_DataProcessing/data
-PythonProject/MultichannelBiosignalEmotionRecognition/DEAP_DataProcessing/samples
+PythonProject/MultichannelBiosignalEmotionRecognition/data_analysis/data
+PythonProject/MultichannelBiosignalEmotionRecognition/data_analysis/samples
 TensorFlowLearningDemo/
 __pycache__/
 README
