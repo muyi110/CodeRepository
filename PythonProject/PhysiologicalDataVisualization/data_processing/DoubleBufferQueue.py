@@ -264,3 +264,39 @@ class DoubleBufferQueue_ParseData_ecg():
         finally:
             lock_heartValue_.release()
         return temp_list
+
+class DoubleBufferQueue_ParseData_gsr():
+    """双缓存实现"""
+    def __init__(self):
+        #原始gsr信号
+        self.raw_gsr_list = list()
+        self.raw_gsr_list0 = list()
+        self.raw_gsr_list1 = list()
+
+        self.raw_gsr_list = self.raw_gsr_list0
+        self._flag_raw_gsr = True  #_flag = True: list指向list0;    否则指向list1
+
+    def writer_raw_gsr(self, data):
+        lock_raw_gsr = threading.Lock()
+        lock_raw_gsr.acquire()
+        try:
+            self.raw_gsr_list.append(data)
+        finally:
+            lock_raw_gsr.release()     #释放锁
+
+    def reader_raw_gsr(self):
+        lock_raw_gsr_ = threading.Lock()
+        lock_raw_gsr_.acquire()
+        try:
+            temp_list = self.raw_gsr_list[:]
+            if self._flag_raw_gsr:
+                self.raw_gsr_list = self.raw_gsr_list1
+                self.raw_gsr_list0.clear()
+                self._flag_raw_gsr = False
+            else:
+                self.raw_gsr_list = self.raw_gsr_list0
+                self.raw_gsr_list1.clear()
+                self._flag_raw_gsr = True
+        finally:
+            lock_raw_gsr_.release()
+        return temp_list

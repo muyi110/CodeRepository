@@ -1,8 +1,9 @@
 #此模块为数据解析模块
+import numpy as np
 try:
-    from DoubleBufferQueue import DoubleBufferQueue_ParseData_eeg, DoubleBufferQueue_ParseData_ecg
+    from DoubleBufferQueue import DoubleBufferQueue_ParseData_eeg, DoubleBufferQueue_ParseData_ecg, DoubleBufferQueue_ParseData_gsr
 except ImportError:
-    from data_processing.DoubleBufferQueue import DoubleBufferQueue_ParseData_eeg, DoubleBufferQueue_ParseData_ecg
+    from data_processing.DoubleBufferQueue import DoubleBufferQueue_ParseData_eeg, DoubleBufferQueue_ParseData_ecg, DoubleBufferQueue_ParseData_gsr
 class DataParserEEG():
     def __init__(self):
         self.PARSER_CODE_ATTENTION = 4    #注意力
@@ -289,3 +290,40 @@ class DataParserECG_BMD101():
                     if valueBytesLength == self.EEG_DEBUG_TWO_BYTE_LENGTH:
                         i = i + valueBytesLength
         self.parserStatus = self.PARSER_STATE_SYNC
+
+class DataParserGSR():
+    def __init__(self):
+        self.SPACE = 0x20
+        self.rawWaveData = 0
+        self.count = 0 #存储多个个数字
+        self.dot_flag = False
+        self.dot_num_behind = 1
+        self.array = list()
+        self.double_queue_parse_data_gsr = DoubleBufferQueue_ParseData_gsr() #创建解析后的数据双缓冲实例
+    def parseByte(self, data):
+        if (data >= 0x30 and data <= 0x39) or data == self.SPACE or data == 0x0D or data == 0x0A or data == 0x2E:
+            if data >= 0x30 and data <= 0x39:
+                if not self.dot_flag:
+                    self.rawWaveData = (self.rawWaveData * 10) + (data - 48)
+                elif self.dot_flag:
+                    self.rawWaveData = self.rawWaveData + ((data - 48) / np.power(10, self.dot_num_behind))
+                    self.dot_num_behind += 1
+            elif data == self.SPACE :
+                self.dot_flag = False
+                self.dot_num_behind = 1
+                self.count += 1
+                self.array.append(self.rawWaveData)
+                self.rawWaveData = 0
+            elif data == 0x2E:#小数点
+                self.dot_flag = True
+            elif data == 0x0D:
+                self.count += 1
+                self.array.append(self.rawWaveData)
+                if self.count == 28:
+                    for element in self.array[:10]:
+                        self.double_queue_parse_data_gsr.writer_raw_gsr(element)
+                self.array.clear()
+                self.count = 0
+                self.rawWaveData = 0
+                self.dot_flag = False
+                self.dot_num_behind = 1

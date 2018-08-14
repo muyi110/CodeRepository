@@ -13,7 +13,7 @@ from UI.MainFrame import MainFrame
 from serial_set.serial_set import SerialSet
 from data_processing.DoubleBufferQueue import DoubleBufferQueue
 #from data_processing.BufferQueue import BufferQueue
-from data_processing.DataParser import DataParserEEG, DataParserECG
+from data_processing.DataParser import DataParserEEG, DataParserECG, DataParserGSR
 from data_processing.Filter import ECGFilter
 
 if platform.system() == "Windows":
@@ -36,6 +36,7 @@ class Main(MainFrame):
 
         self._data_parse_complete_flag_eeg = False #数据解析完成标志
         self._data_parse_complete_flag_ecg = False #数据解析完成标志
+        self._data_parse_complete_flag_gsr = False #数据解析完成标志
 
 
         self.serial_listbox_eeg = list()   #返回一个空列表，存储USB设备名称
@@ -68,6 +69,7 @@ class Main(MainFrame):
         #self.double_buffer = BufferQueue()
         self.dataParse_eeg = DataParserEEG()
         self.dataParse_ecg = DataParserECG()
+        self.dataParse_gsr = DataParserGSR()
         self.ecgfilter = ECGFilter()
         self.y_delta = [None]*500
         self.line_delta, = self.Delta_figure.plot(np.arange(0,500,1),self.y_delta,color = 'red')
@@ -90,6 +92,8 @@ class Main(MainFrame):
         self.line_eeg, = self.raw_eeg_figure.plot(np.arange(0,1000,1), self.y_eeg,color = 'red')
         self.y_ecg = [None]*1000
         self.line_ecg, = self.ecg_figure.plot(np.arange(0,1000,1), self.y_ecg,color = 'red')
+        self.y_gsr = [None]*1000
+        self.line_gsr, = self.gsr_figure.plot(np.arange(0,1000,1), self.y_gsr,color = 'red')
 
     def find_all_devices(self):
         """线程检测连接设备的状态"""
@@ -220,7 +224,12 @@ class Main(MainFrame):
                             if re.search(r"\/ttyUSB[0-9]+$", fn):
                                 tty_devs.append(os.path.join(
                                     "/dev", os.path.basename(fn)))
-            except Exception as ex:
+                        for an in glob.glob('/sys/class/tty/*'):
+                            if re.search(r"\/ttyACM[0-9]+$", an):
+                                if os.path.join("/dev", os.path.basename(an)) in tty_devs:
+                                    continue
+                                tty_devs.append(os.path.join("/dev", os.path.basename(an)))
+            except Exception:
                 pass
         return tty_devs
 
@@ -448,7 +457,10 @@ class Main(MainFrame):
 
     def serial_on_data_received_gsr(self, data):
         """串口接收数据"""
-        pass
+        for element in data:
+            self.double_buffer.writer_gsr(element)
+        self.ser_gsr._serial_received_data = True
+
 
     def data_parse_eeg(self,data):
         """开始数据解析"""
@@ -464,7 +476,10 @@ class Main(MainFrame):
         self._data_parse_complete_flag_ecg = True
 
     def data_parse_gsr(self,data):
-        pass
+        for element in self.double_buffer.reader_gsr():
+            self.dataParse_gsr.parseByte(element)
+        self.ser_gsr._serial_received_data = False
+        self._data_parse_complete_flag_gsr = True
 
     def eight_eeg_waveform_plot(self):
         temp_list = list()
@@ -669,7 +684,34 @@ class Main(MainFrame):
         #    self.wave_ecg.canvas_ecg.show()  #刷新绘图
 
     def raw_gsr_waveform_plot(self):
-        pass
+        temp_list = list()
+        temp_list = self.dataParse_gsr.double_queue_parse_data_gsr.reader_raw_gsr()
+        #画原始脑波窗口大小是1000
+        if (self.current_raw_gsr + len(temp_list)) > 1000:
+            #当最新取出的数据太多，只取最新的数据
+            if len(temp_list) > 1000:
+                temp_list = temp_list[-1000:]  #取最后1000个数据
+            originalIndex = self.current_raw_gsr
+            self.current_raw_gsr = 949  #移出5%的空间(1000x0.95-1)
+            if self.current_raw_gsr > (1000 - len(temp_list)):
+                self.current_raw_gsr = 1000 - len(temp_list)
+            srcIndex = originalIndex - self.current_raw_gsr
+            i = 0
+            while i < srcIndex:
+                del self.rawgsr_list[0]
+                i = i + 1
+        n = 0
+        while n < len(temp_list):
+            self.rawgsr_list.append(temp_list[n] / 10)
+            self.current_raw_gsr += 1
+            n += 1
+        #下面开始触发画图
+        if len(self.rawgsr_list) > 0:
+            self.y_gsr = self.rawgsr_list[:]    #更新数据
+            if len(self.y_gsr) < 1000:
+                self.y_gsr += [None]*(1000 - len(self.y_gsr))
+            self.line_gsr.set_ydata(self.y_gsr)
+            self.wave_gsr.canvas_gsr.show()  #刷新绘图
 
     def eeg_siganl_plot(self):
         #下面是直接调用画图(如果效果不行，重新开个线程)
@@ -688,6 +730,12 @@ class Main(MainFrame):
             self._data_parse_complete_flag_ecg = False
         self.root.after(50, self.ecg_siganl_plot)
 
+    def gsr_siganl_plot(self):
+        #下面是直接调用画图
+        if self._data_parse_complete_flag_gsr:
+            self.raw_gsr_waveform_plot()
+            self._data_parse_complete_flag_gsr = False
+        self.root.after(50, self.gsr_siganl_plot)
 
 
 if __name__ == '__main__':
@@ -708,4 +756,5 @@ if __name__ == '__main__':
     app = Main(root)
     root.after(0, app.eeg_siganl_plot)
     root.after(0, app.ecg_siganl_plot)
+    root.after(0, app.gsr_siganl_plot)
     root.mainloop() 

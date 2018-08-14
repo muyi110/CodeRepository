@@ -132,6 +132,11 @@ class SerialSet():
                         for fn in glob.glob(os.path.join(sdn, "*")):
                             if re.search(r"\/ttyUSB[0-9]+$", fn):
                                 tty_devs.append(os.path.join("/dev", os.path.basename(fn)))
+                        for an in glob.glob('/sys/class/tty/*'):
+                            if re.search(r"\/ttyACM[0-9]+$", an):
+                                if os.path.join("/dev", os.path.basename(an)) in tty_devs:
+                                    continue
+                                tty_devs.append(os.path.join("/dev", os.path.basename(an)))                            
             except Exception:
                 pass
         return tty_devs
