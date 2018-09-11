@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">SleepMonitor</string>
+    <string name="available_device">可用设备</string>
+</resources>
