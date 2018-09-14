@@ -21,6 +21,8 @@ public class ShowDataActivity extends AppCompatActivity {
     public TextView mTextView;
     private MyHandle mMyHandle = new MyHandle(this);
     private DataParser dataParser = new DataParser();
+    private Boolean getDataThreadStopFlag = false;
+    private Boolean getParserDataThreadStopFlag = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,7 +41,7 @@ public class ShowDataActivity extends AppCompatActivity {
     private class GetDataThread extends Thread{
         @Override
         public void run() {
-            while(true) {
+            while(!getDataThreadStopFlag) {
                 try {
                     //get received data
                     byte[] result = Bluetooth.mDataReceive.get();
@@ -64,7 +66,7 @@ public class ShowDataActivity extends AppCompatActivity {
         @Override
         public void run() {
             StringBuilder stringBuilder = new StringBuilder();
-            while(true) {
+            while(!getParserDataThreadStopFlag) {
                 if(parser_complete_flag) {
                     try {
                         DataParser.OtherSensorDataPack[] otherSensorDataPack =
@@ -128,6 +130,8 @@ public class ShowDataActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        getDataThreadStopFlag = true;
+        getParserDataThreadStopFlag = true;
         finish();
     }
 }

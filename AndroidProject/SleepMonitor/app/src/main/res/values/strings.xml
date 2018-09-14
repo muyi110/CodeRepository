@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">SleepMonitor</string>
     <string name="available_device">可用设备</string>
+    <string name="eeg_wave">脑电波形</string>
+    <string name="environment_temp">当前环境温度</string>
+    <string name="environment_humi">当前环境湿度</string>
+    <string name="head_move">头部运动</string>
+    <string name="body_temp">体温</string>
 </resources>

@@ -36,7 +36,7 @@ public class BluetoothActivity extends AppCompatActivity {
                 //Connect bluetooth
                 mBluetooth.connectBluetooth(position);
                 //Open data show UI
-                Intent mIntent = new Intent(BluetoothActivity.this, ShowDataActivity.class);
+                Intent mIntent = new Intent(BluetoothActivity.this, RealTimeDataSHowActivity.class);
                 startActivity(mIntent);
             }
         });
