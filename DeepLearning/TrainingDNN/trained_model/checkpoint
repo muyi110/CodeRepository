@@ -1,0 +1,2 @@
+model_checkpoint_path: "my_best_mnist_model_without_BN_dropout_0_to_4.ckpt"
+all_model_checkpoint_paths: "my_best_mnist_model_without_BN_dropout_0_to_4.ckpt"
