@@ -8,6 +8,7 @@ from sklearn.exceptions import NotFittedError
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import RandomizedSearchCV
 from tcn import TCN
+from data import read_data, index_generator
 
 # 构建 TCN 模型类，为了兼容 scikit-learning 的 RandomizedSearchCV 类，后续可能实现超参数搜索
 class TCNClassifier(BaseEstimator, ClassifierMixin):
@@ -41,11 +42,11 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
             tf.set_random_seed(self.random_state)
             np.random.seed(self.random_state)
         inputs = tf.placeholder(tf.float32, 
-                                shape=(self.batch_size, self.sequence_length, self.in_channels), name="inputs")
+                                shape=(None, self.sequence_length, self.in_channels), name="inputs")
         labels = tf.placeholder(tf.int32, shape=(None), name="labels")
         #self._training = tf.placeholder_with_default(True, shape=(), name="training")
         tcn_outputs = self._TCN(inputs, n_outputs)
-        predictions = tf.softmax(tcn_outputs, name="predictions")
+        predictions = tf.nn.softmax(tcn_outputs, name="predictions")
         # 计算交叉熵
         xentropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=tcn_outputs)
         loss = tf.reduce_mean(xentropy, name="loss")
@@ -85,6 +86,8 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
         self.close_session()
         self.classes_ = np.unique(y)
         n_outputs = len(self.classes_) # 获取输出的类别数
+        self.class_to_index_ = {label:index for index, label in enumerate(self.classes_)}
+        y = np.array([self.class_to_index_[label] for label in y], dtype=np.int32)
         self._graph = tf.Graph()
         with self._graph.as_default():
             self._bulid_graph(n_outputs) # 构建计算模型
@@ -94,13 +97,21 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
         best_loss = np.infty
         best_params = None
         # 开始训练阶段
+        seed = 0
         self._session = tf.Session(graph=self._graph)
         with self._session.as_default() as sess:
             sess.run(self._init)
             for epoch in range(n_epochs):
-                pass
+                seed += 1
+                #for iteration in range(int(np.ceil(len(y)/self.batch_size))):
+                for X_batch_index, y_batch_index in index_generator(len(y), self.batch_size, seed=seed):
+                    X_batch = X[X_batch_index]
+                    y_batch = y[y_batch_index]
+                    _, loss_val = sess.run([self._training_op, self._loss], feed_dict={self._X: X_batch, self._y: y_batch})
+                    print("{}\ttraining batch loss: {:.6f}".format(seed, loss_val))
+
                 # 下面用于 early stopping
-                if V_valid is not None and y_valid is not None:
+                if X_valid is not None and y_valid is not None:
                     loss_val, acc_val = sess.run([self._loss, self._accuracy], 
                                                  feed_dict={self._X:X_valid, self._y:y_valid})
                     if loss_val < best_loss:
@@ -131,3 +142,29 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
         return np.array([[self.classes_[class_index]] for class_index in class_indices], np.int32)
     def save(self, path):
         self._saver.save(self._session, path)
+
+if __name__ == "__main__":
+    n_classes = 4 # 4 分类问题
+    input_channels = 32 # 输入通道数 32
+    seq_length = int(60*128*32 / input_channels) # 序列的长度
+    dropout = 0.5
+    learning_rate=0.001
+    num_channels = [50]*11 # 有多少层，及每一层包含的神经元个数（这里的一层指一个 block）
+    kernel_size = 5   # 卷积核大小  
+    batch_size = 16
+
+    # 获取生理信号数据(训练集)
+    datas, labels = read_data(train=True, test=False, input_datas_norm=True, seed=42)
+    # 数据处理，目前只用到 32 通道的 EEG 信号
+    datas_eeg = np.array(datas)[:,0:32,:] # datas_result 的 shape=(960, 32, 7680)
+    # datas_eeg = tf.transpose(datas_eeg, perm=[0, 2, 1]) # 将 datas_result 的形状变为 shape=(960, 7680, 32)
+    # with tf.Session() as sess:
+    #     sess.run(tf.global_variables_initializer())
+    #     datas_eeg = datas_eeg.eval() # 将 tensor 转为 numpy.array
+    datas_eeg = datas_eeg.transpose((0,2,1)) # 将 datas_result 的形状变为 shape=(960, 7680, 32)
+    labels = np.array(labels).reshape(-1)
+    # 开始构建TCN 模型实例
+    tcn = TCNClassifier(num_channels=num_channels, sequence_length = seq_length, kernel_size=kernel_size, 
+                        dropout=dropout, batch_size=batch_size, in_channels=input_channels, 
+                        random_state=42, learning_rate=learning_rate)
+    tcn.fit(X=datas_eeg, y=labels, n_epochs=2)

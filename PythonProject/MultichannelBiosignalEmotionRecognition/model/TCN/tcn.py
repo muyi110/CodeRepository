@@ -116,5 +116,5 @@ def temporal_ConvNet(input_layer, num_channels, sequence_length, kernel_size=3,
 def TCN(input_layer, output_size, num_channels, sequence_length, kernel_size, dropout):
     tcn = temporal_ConvNet(input_layer=input_layer, num_channels=num_channels, sequence_length=sequence_length, 
                            kernel_size=kernel_size, dropout=dropout)
-    linear = tf.cotnrib.layers.fully_connected(tcn[:, -1, :], output_size, activation_fn=None)
+    linear = tf.contrib.layers.fully_connected(tcn[:, -1, :], output_size, activation_fn=None)
     return linear

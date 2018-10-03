@@ -14,7 +14,7 @@ def get_samples_data(path, train=True, test=False, seed=42):
     np.random.seed(42)
     samples_indices = list(np.random.permutation(32*40)) # 将所有的样本随机打乱
     # 将样本划分为训练集和测试集（训练集：920个;  测试集：360个）
-    train_indices = samples_indices[:920]
+    train_indices = samples_indices[:100]
     test_indices = samples_indices[920:]
     # 获取训练集样本
     if train:
