@@ -56,6 +56,7 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
         # 构建计算准确率节点
         correct = tf.nn.in_top_k(tcn_outputs, labels, 1)
         accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")
+        correct_sum = tf.reduce_sum(tf.cast(correct, tf.float32), name="correct_sum") # 用于计算总的判断正确样本数 
         # 构建全局初始化节点和模型保存节点
         init = tf.global_variables_initializer()
         saver = tf.train.Saver()
@@ -64,6 +65,7 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
         self._predictions, self._loss = predictions, loss
         self._training_op, self._accuracy = training_op, accuracy
         self._init, self._saver = init, saver
+        self._sum_correct = correct_sum
     def close_session(self):
         if self._session:
             self._session.close()
@@ -102,13 +104,18 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
         with self._session.as_default() as sess:
             sess.run(self._init)
             for epoch in range(n_epochs):
+                total_train_loss = 0
+                total_correct_num = 0
                 seed += 1
                 #for iteration in range(int(np.ceil(len(y)/self.batch_size))):
                 for X_batch_index, y_batch_index in index_generator(len(y), self.batch_size, seed=seed):
                     X_batch = X[X_batch_index]
                     y_batch = y[y_batch_index]
-                    _, loss_val = sess.run([self._training_op, self._loss], feed_dict={self._X: X_batch, self._y: y_batch})
-                    print("{}\ttraining batch loss: {:.6f}".format(seed, loss_val))
+                    _, loss_val, correct_sum = sess.run([self._training_op, self._loss, self._sum_correct], 
+                                                        feed_dict={self._X: X_batch, self._y: y_batch})
+                    total_train_loss += loss_val # 叠加每一个 batch 的训练损失
+                    total_correct_num += correct_sum # 叠加判断正确的样本数
+                    #print("{}\ttraining batch loss: {:.6f}".format(seed, loss_val))
 
                 # 下面用于 early stopping
                 if X_valid is not None and y_valid is not None:
@@ -125,9 +132,11 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
                     if checks_without_progress >= max_check_without_progress:
                         print("Early stopping!")
                 else:
-                    loss_train, acc_train = sess.run([self._loss, self._accuracy], 
-                                                     feed_dict={self._X:X_batch, self._y:y_batch})
-                    print("{}\tLast training batch loss: {:.6f}\tAccuracy: {:.2f}%".format(epoch, 
+                    # loss_train, acc_train = sess.run([self._loss, self._accuracy], 
+                    #                                  feed_dict={self._X:X_batch, self._y:y_batch})
+                    loss_train = total_train_loss / len(y)
+                    acc_train = total_correct_num / len(y)
+                    print("{}\ttraining loss: {:.6f}\t|  training accuracy: {:.2f}%".format(epoch, 
                           loss_train, acc_train*100))
             if best_params:
                 self._restore_model_params(best_params)
@@ -167,4 +176,4 @@ if __name__ == "__main__":
     tcn = TCNClassifier(num_channels=num_channels, sequence_length = seq_length, kernel_size=kernel_size, 
                         dropout=dropout, batch_size=batch_size, in_channels=input_channels, 
                         random_state=42, learning_rate=learning_rate)
-    tcn.fit(X=datas_eeg, y=labels, n_epochs=2)
+    tcn.fit(X=datas_eeg, y=labels, n_epochs=5)

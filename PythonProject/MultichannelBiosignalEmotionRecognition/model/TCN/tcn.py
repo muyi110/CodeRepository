@@ -4,6 +4,11 @@ import tensorflow as tf
 from tensorflow.contrib.framework.python.ops import add_arg_scope
 # 并不是所有的方法都能用 arg_scope 设置默认参数
 # 只有用 add_arg_scope 修饰过的方法才能使用arg_scope.
+
+# 构建 He initializer 节点
+he_init = tf.contrib.layers.variance_scaling_initializer()
+# 构建 random_normal_initializer 初始化节点
+random_normal_init = tf.random_normal_initializer(0, 0.01)
 def get_name(layer_name, counters):
     '''
     用来跟踪网络层的名字
@@ -35,7 +40,7 @@ def weight_norm_convolution1D(x, num_filters, dilation_rate, filter_size=3, stri
             print("Initializing weight norm")
             # data based initialization of parameters
             V = tf.get_variable('V', [filter_size, int(x.get_shape()[-1]), num_filters], tf.float32, 
-                                tf.random_normal_initializer(0, 0.01), trainable=True)
+                                he_init, trainable=True)
             V_norm = tf.nn.l2_normalize(V.initialized_value(), [0, 1])
             # pad x
             left_pad = dilation_rate * (filter_size - 1)
@@ -54,7 +59,7 @@ def weight_norm_convolution1D(x, num_filters, dilation_rate, filter_size=3, stri
                 num_filters = num_filters * 2
             # size of V is L, Cin, Cout
             V = tf.get_variable('V', [filter_size, int(x.get_shape()[-1]), num_filters], tf.float32, 
-                                tf.random_normal_initializer(0, 0.01), trainable=True)
+                                he_init, trainable=True)
             g = tf.get_variable('g', shape=[num_filters], dtype=tf.float32, 
                                 initializer=tf.constant_initializer(1.), trainable=True)
             b = tf.get_variable('b', shape=[num_filters], dtype=tf.float32, 
@@ -76,7 +81,7 @@ def weight_norm_convolution1D(x, num_filters, dilation_rate, filter_size=3, stri
             return x
 
 def temporal_block(input_layer, out_channels, filter_size, stride, dilation_rate, counters, 
-                   dropout, init=False, use_highway=False, gated=False, is_training=True):
+                   dropout, init=False, use_highway=False, gated=False):
     '''TCN 中残差块'''
     keep_prob = 1.0 - dropout
     in_channels = input_layer.get_shape()[-1]
@@ -85,15 +90,15 @@ def temporal_block(input_layer, out_channels, filter_size, stride, dilation_rate
         conv1 = weight_norm_convolution1D(input_layer, out_channels, dilation_rate, filter_size, 
                                           [stride], counters=counters, init=init, gated=gated)
         noise_shape = (tf.shape(conv1)[0], tf.constant(1), tf.shape(conv1)[2])
-        out1 = tf.contrib.layers.dropout(conv1, keep_prob, noise_shape, is_training=is_training)
+        out1 = tf.nn.dropout(conv1, keep_prob, noise_shape)
 
         conv2 = weight_norm_convolution1D(out1, out_channels, dilation_rate, filter_size, [stride], 
                                           counters=counters, init=init, gated=gated)
-        out2 = tf.contrib.layers.dropout(conv2, keep_prob, noise_shape, is_training=is_training)
+        out2 = tf.nn.dropout(conv2, keep_prob, noise_shape)
         residual = None
         if in_channels != out_channels:
             W_h = tf.get_variable('W_h', [1, int(input_layer.get_shape()[-1]), out_channels], 
-                                  tf.float32, tf.random_normal_initializer(0, 0.01), trainable=True)
+                                  tf.float32, he_init, trainable=True)
             b_h = tf.get_variable('b_h', shape=[out_channels], dtype=tf.float32, initializer=None, trainable=True)
             residual = tf.nn.bias_add(tf.nn.convolution(input_layer, W_h, 'SAME'), b_h)
         else:
@@ -102,7 +107,7 @@ def temporal_block(input_layer, out_channels, filter_size, stride, dilation_rate
         return tf.nn.relu(out2 + res)
 
 def temporal_ConvNet(input_layer, num_channels, sequence_length, kernel_size=3, 
-                     dropout=tf.constant(0.0, dtype=tf.float32), init=False, use_gated=False, is_training=True):
+                     dropout=tf.constant(0.0, dtype=tf.float32), init=False, use_gated=False):
     num_levels = len(num_channels)
     counters = {}
     for i in range(num_levels):
