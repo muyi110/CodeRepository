@@ -12,6 +12,7 @@ import android.widget.TextView;
 import com.example.bluetooth.Bluetooth;
 import com.example.data.DataParser;
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
@@ -52,7 +53,23 @@ public class RealTimeDataSHowActivity extends AppCompatActivity {
         body_temp_textView = findViewById(R.id.body_temp_textView);
         head_move_textView = findViewById(R.id.head_move_textView);
         mChart = findViewById(R.id.chart);
-        mChart.setDrawGridBackground(false);
+        XAxis xAxis = mChart.getXAxis(); //获取画 EEG 波形控件的 X 轴
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setEnabled(true);
+        xAxis.setDrawLabels(false);
+        xAxis.setDrawGridLines(false);
+        xAxis.setSpaceMin(1f);
+        xAxis.setSpaceMax(1f);
+        xAxis.setAxisMinimum(0f);
+        xAxis.setDrawAxisLine(true);  // 画 X 轴的轴线
+        // 获取 Y 轴
+        YAxis leftAxis = mChart.getAxisLeft();
+        YAxis rightAxis = mChart.getAxisRight();
+        leftAxis.setAxisMaximum(100);
+        leftAxis.setAxisMinimum(-100);
+        rightAxis.setAxisMaximum(100);
+        rightAxis.setAxisMinimum(-100);
+        mChart.setDrawGridBackground(true);
         mChart.getDescription().setEnabled(false);
         mChart.setData(new LineData());
 
@@ -161,7 +178,7 @@ public class RealTimeDataSHowActivity extends AppCompatActivity {
                     ILineDataSet set = data.getDataSetByIndex(0);
                     if(set == null){
                         LineDataSet sets = new LineDataSet(null, "eeg");
-                        sets.setLineWidth(2.5f);
+                        sets.setLineWidth(1.5f);
                         //sets.setCircleRadius(4.5f);
                         sets.setColor(Color.rgb(240, 99, 99));
                         //sets.setCircleColor(Color.rgb(240, 99, 99));
@@ -175,16 +192,17 @@ public class RealTimeDataSHowActivity extends AppCompatActivity {
                     }
                     if(((DataParser.EEGRawDataPack[])msg.obj).length > 0) {
                         for (DataParser.EEGRawDataPack element : (DataParser.EEGRawDataPack[]) msg.obj) {
-                            data.addEntry(new Entry((float) mActivity.get().t++ / 1000, (float) element.rawData / 6), 0);
+                            data.addEntry(new Entry((float) mActivity.get().t++ / 900, (float) element.rawData / 6), 0);
                         }
                     }
                     else {
-                        data.addEntry(new Entry((float) mActivity.get().t++ / 1000, 0f), 0);
+                        data.addEntry(new Entry((float) mActivity.get().t++ / 900, 0f), 0);
                     }
                     data.notifyDataChanged();
                     mActivity.get().mChart.notifyDataSetChanged();
                     mActivity.get().mChart.setVisibleXRangeMaximum(10);
-                    mActivity.get().mChart.moveViewTo(data.getEntryCount() - 11, 0f, YAxis.AxisDependency.LEFT);
+                    mActivity.get().mChart.setVisibleXRangeMinimum(10);
+                    mActivity.get().mChart.moveViewTo(data.getEntryCount() - 10, 0f, YAxis.AxisDependency.LEFT);
                     break;
                 case UPDATE_SHT11_TEMP:
                     mActivity.get().sht11_temp_textView.setText(msg.obj.toString());
