@@ -2,20 +2,23 @@
 import os
 import math
 import numpy as np
+import features
+from features import data_filter, differential_entropy
 
 SAMPLES_PATH = '../../data_analysis/samples/'''
-
+params = (features.b_theta, features.a_theta, features.b_alpha, features.a_alpha, 
+          features.b_beta, features.a_beta, features.b_gamma, features.a_gamma)
 def get_samples_data(path, train=True, test=False, seed=42):
     samples_dirs = os.listdir(path) # 目录的顺序是随机的
     samples_dirs = sorted(samples_dirs)
     file_path = [os.path.join(path, samples_dirs[i]) for i in range(len(samples_dirs))]
     datas = []
     labels = []
-    np.random.seed(42)
+    np.random.seed(seed)
     samples_indices = list(np.random.permutation(32*40)) # 将所有的样本随机打乱
-    # 将样本划分为训练集和测试集（训练集：920个;  测试集：360个）
-    train_indices = samples_indices[:920]
-    test_indices = samples_indices[920:]
+    # 将样本划分为训练集和测试集（训练集：880个;  测试集：400个）
+    train_indices = samples_indices[:960]
+    test_indices = samples_indices[960:]
     # 获取训练集样本
     if train:
         for elem in train_indices:
@@ -94,21 +97,31 @@ def index_generator(num_examples, batch_size, seed=0):
         y_batch_index = permutation[num_complete_minibatches*batch_size:num_examples]
         yield (X_batch_index, y_batch_index)
 
-def read_data(path=SAMPLES_PATH, train=True, test=False, seed=42, input_datas_norm=True):
-    '''默认读取训练集数据（920个）'''
+def read_data(path=SAMPLES_PATH, train=True, test=False, seed=42, raw_data=False):
     # datas 和 labels 都是 list. datas 中的每一项是 shape=(40, 8064) 的数组
     datas, labels = get_samples_data(path, train=train, test=test, seed=42)
     # 移除前 3S 的数据，利用后 60S 的数据
-    # 同时将数据归一化处理
     datas_result = []
+    time_window = 4 # 时间窗口大小是 2s
     for data in datas:
-        if input_datas_norm:
-            mean = data[:,128*3:].mean()
-            std = data[:,128*3:].std()
-            norm_result = (data[:,128*3:] - mean) / (std+1e-10)
-            datas_result.append(norm_result)
+        data_list = []
+        if not raw_data:
+            # 数据预处理，提取特征(每一个样本处理后的结果是 numpy.narray 且 shape=(features, seq_length))
+            for window in range(60 // time_window):
+                features_list = []
+                for i in range(32): # 依次处理 32 通道的 EEG 信号
+                    X = data[i, 128*(3+window*time_window):128*(3+time_window*(window+1))]
+                    theta, alpha, beta, gamma = data_filter(X, params) # 获取各个频率段的数据
+                    features_list.append(differential_entropy(theta))
+                    features_list.append(differential_entropy(alpha))
+                    features_list.append(differential_entropy(beta))
+                    features_list.append(differential_entropy(gamma))
+                data_list.append(np.array(features_list).reshape(-1, 1))
+            datas_result.append(np.c_[tuple(data_list)]) # shape=(features, seq_length)
         else:
-            datas_result.append(data[:,128*3:])
+            datas_result.append(data[:32,128*3:])
+    
+    datas.clear() # 释放内存
     return (datas_result, labels)
 
 

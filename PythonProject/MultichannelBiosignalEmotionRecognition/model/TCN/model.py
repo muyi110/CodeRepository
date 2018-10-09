@@ -12,12 +12,13 @@ from data import read_data, index_generator
 
 # 构建 TCN 模型类，为了兼容 scikit-learning 的 RandomizedSearchCV 类，后续可能实现超参数搜索
 class TCNClassifier(BaseEstimator, ClassifierMixin):
-    def __init__(self, num_channels, 
+    def __init__(self,
                  sequence_length, 
-                 kernel_size, 
-                 dropout, 
+                 kernel_size,
+                 num_channels=[30]*6, 
+                 dropout=0.5, 
                  batch_size=16, 
-                 in_channels=1, 
+                 in_channels=32, 
                  random_state=None, 
                  learning_rate=0.001, 
                  optimizer_class=tf.train.AdamOptimizer):
@@ -31,10 +32,10 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
         self.learning_rate = learning_rate
         self.optimizer_class = optimizer_class
         self._session = None
-    def _TCN(self, inputs, n_outputs):
+    def _TCN(self, inputs, n_outputs, training):
         '''构建 TCN 模型'''
         outputs = TCN(inputs, n_outputs, self.num_channels, 
-                      self.sequence_length, self.kernel_size, self.dropout)
+                      self.sequence_length, self.kernel_size, self.dropout, is_training=training)
         return outputs
     def _bulid_graph(self, n_outputs):
         '''构建计算图'''
@@ -44,8 +45,8 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
         inputs = tf.placeholder(tf.float32, 
                                 shape=(None, self.sequence_length, self.in_channels), name="inputs")
         labels = tf.placeholder(tf.int32, shape=(None), name="labels")
-        #self._training = tf.placeholder_with_default(True, shape=(), name="training")
-        tcn_outputs = self._TCN(inputs, n_outputs)
+        self._training = tf.placeholder_with_default(False, shape=(), name="training") # 表示是训练阶段还是测试阶段
+        tcn_outputs = self._TCN(inputs, n_outputs, self._training)
         predictions = tf.nn.softmax(tcn_outputs, name="predictions")
         # 计算交叉熵
         xentropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=tcn_outputs)
@@ -56,7 +57,6 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
         # 构建计算准确率节点
         correct = tf.nn.in_top_k(tcn_outputs, labels, 1)
         accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")
-        correct_sum = tf.reduce_sum(tf.cast(correct, tf.float32), name="correct_sum") # 用于计算总的判断正确样本数 
         # 构建全局初始化节点和模型保存节点
         init = tf.global_variables_initializer()
         saver = tf.train.Saver()
@@ -65,7 +65,6 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
         self._predictions, self._loss = predictions, loss
         self._training_op, self._accuracy = training_op, accuracy
         self._init, self._saver = init, saver
-        self._sum_correct = correct_sum
     def close_session(self):
         if self._session:
             self._session.close()
@@ -83,13 +82,21 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
         # 由于 key 是 tensor ，所以 value 会替换为 key 对应的 tensor. 具体参考官网 tf.Session.run
         feed_dict = {init_values[gvar_name]: model_params[gvar_name] for gvar_name in gvar_names}
         self._session.run(assign_ops, feed_dict=feed_dict)
-    def fit(self, X, y, n_epochs, X_valid=None, y_valid=None):
+    def fit(self, X, y, n_epochs, X_valid=None, y_valid=None, X_test=None, y_test=None):
         '''Fit the model to the training set. If X_valid and y_valid are provided, use early stopping'''
         self.close_session()
+        print("X test shape: ", X_test.shape)
+        print("y test shape: ", y_test.shape)
         self.classes_ = np.unique(y)
         n_outputs = len(self.classes_) # 获取输出的类别数
         self.class_to_index_ = {label:index for index, label in enumerate(self.classes_)}
         y = np.array([self.class_to_index_[label] for label in y], dtype=np.int32)
+        
+        self.y_test_classes_ = np.unique(y_test)
+        y_test_n_outputs = len(self.y_test_classes_) # 获取输出的类别数
+        self.y_test_class_to_index_ = {label:index for index, label in enumerate(self.y_test_classes_)}
+        y_test = np.array([self.y_test_class_to_index_[label] for label in y_test], dtype=np.int32)
+        
         self._graph = tf.Graph()
         with self._graph.as_default():
             self._bulid_graph(n_outputs) # 构建计算模型
@@ -99,22 +106,19 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
         best_loss = np.infty
         best_params = None
         # 开始训练阶段
+        best_acc = 0 # 测试集最好的准确率
         seed = 0
         self._session = tf.Session(graph=self._graph)
         with self._session.as_default() as sess:
             sess.run(self._init)
             for epoch in range(n_epochs):
-                total_train_loss = 0
-                total_correct_num = 0
                 seed += 1
+                start_time = time.time()
                 #for iteration in range(int(np.ceil(len(y)/self.batch_size))):
                 for X_batch_index, y_batch_index in index_generator(len(y), self.batch_size, seed=seed):
                     X_batch = X[X_batch_index]
                     y_batch = y[y_batch_index]
-                    _, loss_val, correct_sum = sess.run([self._training_op, self._loss, self._sum_correct], 
-                                                        feed_dict={self._X: X_batch, self._y: y_batch})
-                    total_train_loss += loss_val # 叠加每一个 batch 的训练损失
-                    total_correct_num += correct_sum # 叠加判断正确的样本数
+                    sess.run(self._training_op, feed_dict={self._X: X_batch, self._y: y_batch, self._training:True})
                     #print("{}\ttraining batch loss: {:.6f}".format(seed, loss_val))
 
                 # 下面用于 early stopping
@@ -132,12 +136,40 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
                     if checks_without_progress >= max_check_without_progress:
                         print("Early stopping!")
                 else:
-                    # loss_train, acc_train = sess.run([self._loss, self._accuracy], 
-                    #                                  feed_dict={self._X:X_batch, self._y:y_batch})
-                    loss_train = total_train_loss / len(y)
-                    acc_train = total_correct_num / len(y)
-                    print("{}\ttraining loss: {:.6f}\t|  training accuracy: {:.2f}%".format(epoch, 
-                          loss_train, acc_train*100))
+                    total_loss = 0 
+                    total_acc = 0
+                    for i in range(len(y) // 8):
+                        X_batch = X[i*8:(i+1)*8,:,:]
+                        y_batch = y[i*8:(i+1)*8]
+                        loss_train, acc_train = sess.run([self._loss, self._accuracy], 
+                                                      feed_dict={self._X:X_batch, self._y:y_batch})
+                        total_loss += loss_train
+                        total_acc += acc_train
+                        end_time = time.time()
+                    print("{}\ttraining loss: {:.6f}\t|  training accuracy: {:.2f}% | time: {:.2f}s".format(epoch, 
+                          total_loss/(len(y)//8), (total_acc / (len(y)//8))*100, end_time-start_time))
+                    if X_test is not None and y_test is not None and epoch % 2 == 0:
+                        # total_acc_test = 0
+                        # total_loss_test = 0
+                        # for i in range(len(y_test) // 8):
+                        #     X_batch_test = X_test[i*8:(i+1)*8, :, :]
+                        #     y_batch_test = y_test[i*8:(i+1)*8] - 1
+                        #     loss_test, acc_test = sess.run([self._loss, self._accuracy], 
+                        #                                     feed_dict={self._X:X_batch_test, self._y:y_batch_test})
+                        #     total_acc_test += acc_test
+                        #     total_loss_test += loss_test
+                        #     #y_pred = self.predict(X_batch_test)
+                        #     #total_acc_test += accuracy_score(y_batch_test, y_pred)
+                        # #print("y_pred: ", y_pred)
+                        # #print("y_batch_test: ", y_batch_test)
+                        # #print(accuracy_score(y_batch_test, y_pred))
+                        # if total_acc_test > best_acc:
+                        #     best_acc = total_acc_test
+                        #     self.save("./my_model/train_model.ckpt") # 将训练模型保存
+                        # print("Test accuracy: {:.4f}%\t  Test loss: {:.6f}".format((total_acc_test / (len(y_test) // 8))*100, total_loss_test/(len(y_test) // 8)))
+                        loss_test, acc_test = sess.run([self._loss, self._accuracy], 
+                                                       feed_dict={self._X:X_test, self._y:y_test})
+                        print("Test accuracy: {:.4f}%\t Test loss: {:.6f}".format(acc_test*100, loss_test))
             if best_params:
                 self._restore_model_params(best_params)
             return self
@@ -148,32 +180,70 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
             return self._predictions.eval(feed_dict={self._X: X})
     def predict(self, X):
         class_indices = np.argmax(self.predict_proba(X), axis=1)
-        return np.array([[self.classes_[class_index]] for class_index in class_indices], np.int32)
+        return np.array([self.classes_[class_index] for class_index in class_indices], np.int32).reshape(-1)
     def save(self, path):
         self._saver.save(self._session, path)
 
 if __name__ == "__main__":
+    # 获取生理信号数据(训练集)
+    #datas, labels = read_data(train=True, test=False, raw_data=False, seed=42)
+    datas = np.load("./data_set/datas_train.npy")
+    labels = np.load("./data_set/label_train.npy")
+    print("train set number: ", len(labels))
+    print(datas[1].shape)
+    print(datas.shape)
+    print(labels.shape)
+    # 数据处理，目前只用到 32 通道的 EEG 信号
+    datas_eeg = np.array(datas) # datas_result 的 shape=(880, features, seq_length)
+    datas_eeg = datas_eeg.transpose((0,2,1)) # 将 datas_result 的形状变为 shape=(880, seq_length, features)
+    datas_eeg = datas_eeg.reshape(datas_eeg.shape[0], -1, 1)
+    labels = np.array(labels).reshape(-1)
+    #datas = datas.clear() # 清空列表， 释放内存
+    del datas
+    print(datas_eeg.shape)
+
+    # 获取生理信号数据（测试集）
+    #datas_test, labels_test = read_data(train=False, test=True, raw_data=False, seed=42)
+    datas_test = np.load("./data_set/datas_test.npy")
+    labels_test = np.load("./data_set/label_test.npy")
+    print("test set number: ", len(labels_test))
+    datas_test_eeg = np.array(datas_test) # shape=(400, features, seq_length)
+    datas_test_eeg = datas_test_eeg.transpose((0,2,1)) # 将 shape 转为 shape=(400, seq_length, features)
+    datas_test_eeg = datas_test_eeg.reshape(datas_test_eeg.shape[0], -1, 1)
+    y_test = np.array(labels_test).reshape(-1)
+    #datas_test.clear()
+    del datas_test
+    print(datas_test_eeg.shape)
+
     n_classes = 4 # 4 分类问题
-    input_channels = 32 # 输入通道数 32
-    seq_length = int(60*128*32 / input_channels) # 序列的长度
-    dropout = 0.5
-    learning_rate=0.001
-    num_channels = [50]*11 # 有多少层，及每一层包含的神经元个数（这里的一层指一个 block）
-    kernel_size = 5   # 卷积核大小  
+    input_channels = datas_eeg.shape[-1]
+    seq_length = datas_eeg.shape[-2] # 序列的长度
+    dropout = 0.0
+    learning_rate=0.002
+    # num_channels = [128, 256, 512] # 有多少层，及每一层包含的神经元个数（这里的一层指一个 block）
+    num_channels = [64, 64, 64, 64, 128, 128, 128, 128] 
+    kernel_size = 16   # 卷积核大小  
     batch_size = 16
 
-    # 获取生理信号数据(训练集)
-    datas, labels = read_data(train=True, test=False, input_datas_norm=True, seed=42)
-    # 数据处理，目前只用到 32 通道的 EEG 信号
-    datas_eeg = np.array(datas)[:,0:32,:] # datas_result 的 shape=(960, 32, 7680)
-    # datas_eeg = tf.transpose(datas_eeg, perm=[0, 2, 1]) # 将 datas_result 的形状变为 shape=(960, 7680, 32)
-    # with tf.Session() as sess:
-    #     sess.run(tf.global_variables_initializer())
-    #     datas_eeg = datas_eeg.eval() # 将 tensor 转为 numpy.array
-    datas_eeg = datas_eeg.transpose((0,2,1)) # 将 datas_result 的形状变为 shape=(960, 7680, 32)
-    labels = np.array(labels).reshape(-1)
     # 开始构建TCN 模型实例
     tcn = TCNClassifier(num_channels=num_channels, sequence_length = seq_length, kernel_size=kernel_size, 
                         dropout=dropout, batch_size=batch_size, in_channels=input_channels, 
-                        random_state=42, learning_rate=learning_rate)
-    tcn.fit(X=datas_eeg, y=labels, n_epochs=5)
+                        random_state=0, learning_rate=learning_rate)
+    tcn.fit(X=datas_eeg, y=labels, n_epochs=500, X_test=datas_test_eeg, y_test=y_test)
+    total_acc_test = 0
+    for i in range(len(y_test) // 8):
+        X_batch_test = datas_test_eeg[i*8:(i+1)*8, :, :]
+        y_batch_test = y_test[i*8:(i+1)*8]
+        y_pred = tcn.predict(X_batch_test)
+        total_acc_test += accuracy_score(y_batch_test, y_pred)
+    print("Test accuracy: {:.4f}%".format((total_acc_test / (len(y_test) // 8))*100))
+    # param_distribs = {
+    #                   "num_channels":[[10]*9, [20]*9, [30]*9, [50]*9, [100]*9],
+    #                   "batch_size":[2, 4, 8, 16], 
+    #                   "learning_rate":[0.001, 0.0001, 0.0004]}
+    #                   "dropout":[0.5, 0.8, 0.2, 0.1, 0.0]}
+    # rnd_search = RandomizedSearchCV(TCNClassifier(random_state=42, sequence_length=seq_length, 
+    #                                                in_channels=input_channels, kernel_size=kernel_size), 
+    #                                                param_distribs, n_iter=50, random_state=42, verbose=2)
+    # rnd_search.fit(X=datas_eeg, y=labels, n_epochs=200, X_test=datas_test_eeg, y_test=y_test)
+    # print("rnn best params: ", rnn_search.best_params_)
