@@ -26,6 +26,12 @@ def get_samples_data(path, train=True, test=False, seed=42):
             trail_num = elem % 40 # 获取是第几个实验
             data = np.loadtxt(file_path[people]+'/trial_'+str(trail_num + 1)+".csv", delimiter=',',
                               skiprows=0, dtype=np.float32)
+            data = data[:,128*3:]
+            # 对原始数据每个通道进行归一化处理（0-1）
+            for i in range(data.shape[0]):
+                _min = data[i].min()
+                _max = data[i].max()
+                data[i] = (data[i] - _min) / (_max - _min)
             datas.append(data)
             # 获取对应的 labels
             labels_value = np.loadtxt(file_path[people]+'/label.csv', delimiter=',', 
@@ -48,6 +54,11 @@ def get_samples_data(path, train=True, test=False, seed=42):
             trail_num = elem % 40 # 获取是第几个实验
             data = np.loadtxt(file_path[people]+'/trial_'+str(trail_num + 1)+".csv", delimiter=',',
                               skiprows=0, dtype=np.float32)
+            data = data[:,128*3:]
+            for i in range(data.shape[0]):
+                _min = data[i].min()
+                _max = data[i].max()
+                data[i] = (data[i] - _min) / (_max - _min)
             datas.append(data)
             # 获取对应的 labels
             labels_value = np.loadtxt(file_path[people]+'/label.csv', delimiter=',', 
@@ -69,6 +80,11 @@ def get_samples_data(path, train=True, test=False, seed=42):
             for trial in range(40):
                 data = np.loadtxt(file_path[people]+'/trial_'+str(trial+1)+".csv", delimiter=',', 
                                   skiprows=0, dtype=np.float32)
+                data = data[:,128*3:]
+                for i in range(data.shape[0]):
+                    _min = data[i].min()
+                    _max = data[i].max()
+                    data[i] = (data[i] - _min) / (_max - _min)
                 datas.append(data)
                 # 获取对应的 labels
                 labels_value = np.loadtxt(file_path[people]+'/label.csv', delimiter=',', 
@@ -101,7 +117,7 @@ def index_generator(num_examples, batch_size, seed=0):
 
 def read_data(path=SAMPLES_PATH, train=True, test=False, seed=42, raw_data=False):
     '''默认读取训练集数据（880个）'''
-    # datas 和 labels 都是 list. datas 中的每一项是 shape=(40, 8064) 的数组
+    # datas 和 labels 都是 list. datas 中的每一项是 shape=(40, 7680) 的数组
     datas, labels = get_samples_data(path, train=train, test=test, seed=42)
     # 移除前 3S 的数据，利用后 60S 的数据
     datas_result = []
@@ -113,7 +129,7 @@ def read_data(path=SAMPLES_PATH, train=True, test=False, seed=42, raw_data=False
             for window in range(60 // time_window):
                 features_list = []
                 for i in range(32): # 依次处理 32 通道的 EEG 信号
-                    X = data[i, 128*(3+window*time_window):128*(3+time_window*(window+1))]
+                    X = data[i, 128*(window*time_window):128*(time_window*(window+1))]
                     theta, alpha, beta, gamma = data_filter(X, params) # 获取各个频率段的数据
                     features_list.append(differential_entropy(theta))
                     features_list.append(differential_entropy(alpha))
@@ -124,7 +140,7 @@ def read_data(path=SAMPLES_PATH, train=True, test=False, seed=42, raw_data=False
                 data_list.append((np.array(features_list).reshape(-1, 1) - _min)/(_max - _min)) # 0-1化处理
             datas_result.append(np.c_[tuple(data_list)]) # shape=(features, seq_length)
         else:
-            datas_result.append(data[:32,128*3:])
+            datas_result.append(data[:32,:])
     
     datas.clear() # 释放内存
     if train:

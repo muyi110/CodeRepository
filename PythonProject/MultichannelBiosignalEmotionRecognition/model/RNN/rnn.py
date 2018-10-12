@@ -14,7 +14,7 @@ class RNNClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self, 
                  n_steps = 15,
                  n_inputs = 128, # 可以理解为输入的特征数
-                 n_neurons = 120,# 每个 cell 包含的神经元个数
+                 n_neurons = 10,# 每个 cell 包含的神经元个数
                  n_outputs = 4, # 4 分类
                  learning_rate = 0.001,
                  random_state = None, 
@@ -35,9 +35,9 @@ class RNNClassifier(BaseEstimator, ClassifierMixin):
         lstm_cells_1 = tf.contrib.rnn.BasicLSTMCell(num_units=self.n_neurons) # 构建 LSTM cell
         if multi_layer:
             #lstm_cells_1 = tf.contrib.rnn.DropoutWrapper(lstm_cells_1, input_keep_prob=1-self.dropout)
-            lstm_cells_2 = tf.contrib.rnn.BasicLSTMCell(num_units=100) # 构建第二层 LSTM cell
+            lstm_cells_2 = tf.contrib.rnn.BasicLSTMCell(num_units=10) # 构建第二层 LSTM cell
             #lstm_cells_2 = tf.contrib.rnn.DropoutWrapper(lstm_cells_2, input_keep_prob=1-self.dropout)
-            lstm_cells_3 = tf.contrib.rnn.BasicLSTMCell(num_units=40) # 构建第三层 LSTM cell
+            lstm_cells_3 = tf.contrib.rnn.BasicLSTMCell(num_units=10) # 构建第三层 LSTM cell
             #lstm_cells_3 = tf.contrib.rnn.DropoutWrapper(lstm_cells_3, input_keep_prob=1-self.dropout)
             multi_cell_cell = tf.contrib.rnn.MultiRNNCell([lstm_cells_1, lstm_cells_2, lstm_cells_3])
         else:
@@ -58,11 +58,12 @@ class RNNClassifier(BaseEstimator, ClassifierMixin):
             top_layer_h_state = rnn_outputs[1]
         # 对 RNN 的输出应用 dropout
         top_layer_h_state = tf.contrib.layers.dropout(top_layer_h_state, 1-self.dropout, is_training=is_training)
-        logits_mid = tf.layers.dense(top_layer_h_state, 20, 
-                                 kernel_initializer=tf.contrib.layers.variance_scaling_initializer(), 
-                                 activation=tf.nn.relu,
-                                 name="logits_mid") # 全连接层默认是没有激活函数的
-        out = tf.contrib.layers.dropout(logits_mid, 1-self.dropout, is_training=is_training) # 添加dropout层
+        # logits_mid = tf.layers.dense(top_layer_h_state, 20, 
+        #                          kernel_initializer=tf.contrib.layers.variance_scaling_initializer(), 
+        #                          activation=tf.nn.relu,
+        #                          name="logits_mid") # 全连接层默认是没有激活函数的
+        # out = tf.contrib.layers.dropout(logits_mid, 1-self.dropout, is_training=is_training) # 添加dropout层
+        out = top_layer_h_state
         logits = tf.layers.dense(out, self.n_outputs, 
                                  kernel_initializer=tf.contrib.layers.variance_scaling_initializer(), 
                                  name="logits") # 全连接层默认是没有激活函数的
@@ -130,12 +131,15 @@ class RNNClassifier(BaseEstimator, ClassifierMixin):
                     loss_test, acc_test = sess.run([self._loss, self._accuracy], 
                                                     feed_dict={self._X:X_test, self._y:y_test, self._is_training:False})
                     print("Test accuracy: {:.4f}%\t Test loss: {:.6f}".format(acc_test*100, loss_test))
+                    y_pred = self.predict(X_test)
+                    print("predict: ", y_pred)
+                    print("acctually: ", y_test+1)
             return self
     def predict_proba(self, X):
         if not self._session:
             raise NotFittedError("This %s instance is not fitted yet" % self.__class__.__name__)
         with self._session.as_default() as sess:
-            return self._predictions.eval(feed_dict={self._X: X})
+            return self._Y_proba.eval(feed_dict={self._X: X, self._is_training:False})
     def predict(self, X):
         class_indices = np.argmax(self.predict_proba(X), axis=1)
         return np.array([self.classes_[class_index] for class_index in class_indices], np.int32).reshape(-1)
@@ -171,11 +175,11 @@ if __name__ == "__main__":
     #datas_test.clear()
     del datas_test
     print(datas_test_eeg.shape)
-    rnn = RNNClassifier(random_state=30, learning_rate=1e-3, dropout=0.35)
-    rnn.fit(X=datas_eeg, y=labels, n_epochs=500, X_test=datas_test_eeg, y_test=y_test, multi_cell_cell=False)
-    rnn_1 = RNNClassifier(random_state=30, learning_rate=1e-3, dropout=0.5)
-    rnn_1.fit(X=datas_eeg, y=labels, n_epochs=500, X_test=datas_test_eeg, y_test=y_test, multi_cell_cell=False)
-    rnn_2 = RNNClassifier(random_state=30, learning_rate=1e-3, dropout=0.5)
+    #rnn = RNNClassifier(random_state=30, learning_rate=1e-3, dropout=0.5)
+    #rnn.fit(X=datas_eeg, y=labels, n_epochs=500, X_test=datas_test_eeg, y_test=y_test, multi_cell_cell=False)
+    #rnn_1 = RNNClassifier(random_state=30, learning_rate=1e-3, dropout=0.5)
+    #rnn_1.fit(X=datas_eeg, y=labels, n_epochs=500, X_test=datas_test_eeg, y_test=y_test, multi_cell_cell=False)
+    rnn_2 = RNNClassifier(random_state=30, learning_rate=1e-3, dropout=0.0)
     rnn_2.fit(X=datas_eeg, y=labels, n_epochs=500, X_test=datas_test_eeg, y_test=y_test, multi_cell_cell=True)
     rnn_3 = RNNClassifier(random_state=30, learning_rate=1e-3, dropout=0.6)
     rnn_3.fit(X=datas_eeg, y=labels, n_epochs=500, X_test=datas_test_eeg, y_test=y_test, multi_cell_cell=True)

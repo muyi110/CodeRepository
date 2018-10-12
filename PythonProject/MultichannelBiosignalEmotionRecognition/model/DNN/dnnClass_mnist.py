@@ -181,15 +181,17 @@ class DNNClassifier(BaseEstimator, ClassifierMixin):
 if __name__=="__main__":
     datas = np.load("./data_set/datas_train.npy")
     labels = np.load("./data_set/label_train.npy")
-    datas = datas.transpose((0,2,1))
+
+    #datas = datas.transpose((0,2,1))
     datas = datas.reshape(-1, 15*128)
     labels = np.array(labels).reshape(-1)
 
     datas_test = np.load("./data_set/datas_test.npy")
     labels_test = np.load("./data_set/label_test.npy")
-    datas_test = datas_test.transpose((0,2,1))
+    #datas_test = datas_test.transpose((0,2,1))
     datas_test = datas_test.reshape(-1, 15*128)
     labels_test = np.array(labels_test).reshape(-1)
+    del datas_list
     # dnn_clf = DNNClassifier(random_state=42)
     # dnn_clf.fit(X_train1, y_train1, n_epochs=1000, X_valid=X_valid1, y_valid=y_valid1)
     # y_pred = dnn_clf.predict(X_test1)
