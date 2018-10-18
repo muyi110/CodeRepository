@@ -24,7 +24,7 @@ public class DataParser {
     private int payloadLength;
     private int payloadBytesReceived;
     private int payloadSum;
-    private byte[] payload = new byte[512];
+    private int[] payload = new int[512];
 
     private EEGPowerDataPack eegPowerDataPack = new EEGPowerDataPack();
     private EEGRawDataPack eegRawDataPack = new EEGRawDataPack();
@@ -38,7 +38,7 @@ public class DataParser {
     public DataParser(){
         parserStatus = PARSER_STATE_SYNC;
     }
-    public int parserByte(byte buffer){
+    public int parserByte(int buffer){
         int returnValue = 0;
         switch (parserStatus){
             case 1:
@@ -106,8 +106,8 @@ public class DataParser {
             }
             if(code == PARSER_CODE_EEG_RAW){
                 int count = 0;
-                byte highOrderByte;
-                byte lowOrderByte;
+                int highOrderByte;
+                int lowOrderByte;
                 while(count < valueBytesLength) {
                     highOrderByte = payload[i+count];
                     count++;
@@ -125,9 +125,9 @@ public class DataParser {
             else{
                 switch (code){
                     case PARSER_CODE_EEG_POWER:
-                        byte highOrderByte;
-                        byte lowOrderByte;
-                        byte midOrderByte;
+                        int highOrderByte;
+                        int lowOrderByte;
+                        int midOrderByte;
                         int count = 0;
                         while(count < valueBytesLength){
                             highOrderByte = payload[i + count];
@@ -195,7 +195,7 @@ public class DataParser {
                         break;
                     case PARSER_CODE_ATTENTION:
                         int attention_count = 0;
-                        byte attention_orderByte;
+                        int attention_orderByte;
                         while(attention_count < valueBytesLength){
                             attention_orderByte = payload[i + attention_count];
                             attention_count++;
@@ -209,7 +209,7 @@ public class DataParser {
                         break;
                     case PARSER_CODE_MEDITATION:
                         int meditation_count = 0;
-                        byte meditation_orderByte;
+                        int meditation_orderByte;
                         while(meditation_count < valueBytesLength){
                             meditation_orderByte = payload[i + meditation_count];
                             meditation_count++;
@@ -223,7 +223,7 @@ public class DataParser {
                         break;
                     case PARSER_CODE_POOR_SIGNAL:
                         int signal_count = 0;
-                        byte signal_orderByte;
+                        int signal_orderByte;
                         while(signal_count < valueBytesLength){
                             signal_orderByte = payload[i+signal_count];
                             signal_count++;
@@ -241,16 +241,18 @@ public class DataParser {
         }
         parserStatus = PARSER_STATE_SYNC;
     }
-    private int getRawWaveValue(byte highOrderByte, byte lowOrderByte){
-        int hi = (int)highOrderByte;
-        int lo = ((int)lowOrderByte) & 0xFF;
-        return (hi << 8) | lo;
+    private int getRawWaveValue(int highOrderByte, int lowOrderByte){
+        int hi = highOrderByte;
+        int lo = (lowOrderByte) & 0xFF;
+        int value = (hi << 8) | lo;
+        return value;
     }
-    private int getEEGPowerValue(byte highOrderByte, byte midOrderByte, byte lowOrderByte){
-        int hi = (int)highOrderByte;
-        int mi = (int)midOrderByte;
-        int lo = ((int)lowOrderByte) & 0xFF;
-        return (hi << 16) | (mi << 8) | lo;
+    private int getEEGPowerValue(int highOrderByte, int midOrderByte, int lowOrderByte){
+        int hi = highOrderByte;
+        int mi = midOrderByte;
+        int lo = (lowOrderByte) & 0xFF;
+        int value = (hi << 16) | (mi << 8) | lo;
+        return value;
     }
 
     public class EEGPowerDataPack{

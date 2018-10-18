@@ -24,6 +24,14 @@
     <android.support.v4.widget.Space
         android:layout_width="match_parent"
         android:layout_height="5dp" />
+    <Button
+        android:layout_width="70dp"
+        android:layout_height="wrap_content"
+        android:id="@+id/save_data_button"
+        android:textSize="12sp"
+        android:text="保存"
+        android:layout_gravity="right"
+        />
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

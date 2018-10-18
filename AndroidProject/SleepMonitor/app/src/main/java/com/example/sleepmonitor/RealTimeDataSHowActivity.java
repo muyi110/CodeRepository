@@ -1,12 +1,16 @@
 package com.example.sleepmonitor;
 
+import android.content.Context;
 import android.graphics.Color;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.example.bluetooth.Bluetooth;
@@ -19,6 +23,11 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.lang.ref.WeakReference;
 
 public class RealTimeDataSHowActivity extends AppCompatActivity {
@@ -29,6 +38,7 @@ public class RealTimeDataSHowActivity extends AppCompatActivity {
     private static final int UPDATE_SHT11_HUMI = 3;
     private static final int UPDATE_BODY_TEMP = 4;
     private static final int UPDATE_HEAD_MOVE = 5;
+    private static final int UPDATE_EEG_POWER = 6;
     private Boolean parser_complete_flag = false;
     private MyHandle mMyHandle = new MyHandle(this);
     private DataParser dataParser = new DataParser();
@@ -41,6 +51,9 @@ public class RealTimeDataSHowActivity extends AppCompatActivity {
     private TextView body_temp_textView;
     private TextView head_move_textView;
     private LineChart mChart;
+    private Button saveButton;
+
+    private Boolean save_data_flag = false; //保存数据标志
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +66,9 @@ public class RealTimeDataSHowActivity extends AppCompatActivity {
         body_temp_textView = findViewById(R.id.body_temp_textView);
         head_move_textView = findViewById(R.id.head_move_textView);
         mChart = findViewById(R.id.chart);
+
+        saveButton = findViewById(R.id.save_data_button); //保存数据按钮
+
         XAxis xAxis = mChart.getXAxis(); //获取画 EEG 波形控件的 X 轴
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setEnabled(true);
@@ -79,6 +95,14 @@ public class RealTimeDataSHowActivity extends AppCompatActivity {
         getParserDataThread.start();
 
         mChart.invalidate();
+
+        saveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                save_data_flag = true;
+                save_eeg_to_txt_sd("start:"+"\n");
+            }
+        });
     }
 
     private class GetDataThread extends Thread{
@@ -89,7 +113,8 @@ public class RealTimeDataSHowActivity extends AppCompatActivity {
                     //get received data
                     byte[] result = Bluetooth.mDataReceive.get();
                     for (byte byte_element:result) {
-                        if(dataParser.parserByte(byte_element) < 0)
+                        int number = (int)byte_element & 0xFF;
+                        if(dataParser.parserByte(number) < 0)
                             Log.d(TAG, "Data Parser error!!");
                     }
                     parser_complete_flag = true;
@@ -119,6 +144,7 @@ public class RealTimeDataSHowActivity extends AppCompatActivity {
 
                         DataParser.OtherSensorDataPack[] otherSensorDataPack = DataParser.dataParserResult.other_sensor_get();
                         DataParser.EEGRawDataPack[] eegRawDataPacks = DataParser.dataParserResult.eeg_raw_get();
+                        DataParser.EEGPowerDataPack[] eegPowerDataPacks = DataParser.dataParserResult.eeg_power_get();
                         for (DataParser.OtherSensorDataPack element : otherSensorDataPack) {
                             sht11_temp = element.sht11_temp;
                             sht11_humi = element.sht11_humi;
@@ -153,6 +179,7 @@ public class RealTimeDataSHowActivity extends AppCompatActivity {
                         mMyHandle.obtainMessage(UPDATE_SHT11_HUMI, -1, -1, stringBuilder_sht11_humi).sendToTarget();
                         mMyHandle.obtainMessage(UPDATE_BODY_TEMP, -1, -1, stringBuilder_body_temp).sendToTarget();
                         mMyHandle.obtainMessage(UPDATE_HEAD_MOVE, -1, -1, stringBuilder_head_move).sendToTarget();
+                        mMyHandle.obtainMessage(UPDATE_EEG_POWER, eegPowerDataPacks.length, -1, eegPowerDataPacks).sendToTarget();
                         parser_complete_flag = false;
                         Thread.sleep(100);
                     } catch (Exception e) {
@@ -193,6 +220,10 @@ public class RealTimeDataSHowActivity extends AppCompatActivity {
                     if(((DataParser.EEGRawDataPack[])msg.obj).length > 0) {
                         for (DataParser.EEGRawDataPack element : (DataParser.EEGRawDataPack[]) msg.obj) {
                             data.addEntry(new Entry((float) mActivity.get().t++ / 900, (float) element.rawData / 6), 0);
+                            // 将文件保存
+                            if (mActivity.get().save_data_flag) {
+                                mActivity.get().save_eeg_to_txt_sd(String.valueOf(element.rawData) + " ");
+                            }
                         }
                     }
                     else {
@@ -203,6 +234,20 @@ public class RealTimeDataSHowActivity extends AppCompatActivity {
                     mActivity.get().mChart.setVisibleXRangeMaximum(10);
                     mActivity.get().mChart.setVisibleXRangeMinimum(10);
                     mActivity.get().mChart.moveViewTo(data.getEntryCount() - 10, 0f, YAxis.AxisDependency.LEFT);
+                    break;
+                case UPDATE_EEG_POWER:
+                    for (DataParser.EEGPowerDataPack element : (DataParser.EEGPowerDataPack[]) msg.obj) {
+                        if (mActivity.get().save_data_flag) {
+                            mActivity.get().save_eegpower_to_txt_sd(String.valueOf(element.delta)+" ", 1);
+                            mActivity.get().save_eegpower_to_txt_sd(String.valueOf(element.theta)+" ", 2);
+                            mActivity.get().save_eegpower_to_txt_sd(String.valueOf(element.lowalpha)+" ", 3);
+                            mActivity.get().save_eegpower_to_txt_sd(String.valueOf(element.highalpha)+" ", 4);
+                            mActivity.get().save_eegpower_to_txt_sd(String.valueOf(element.lowbeta)+" ", 5);
+                            mActivity.get().save_eegpower_to_txt_sd(String.valueOf(element.highbeta)+" ", 6);
+                            mActivity.get().save_eegpower_to_txt_sd(String.valueOf(element.lowgamma)+" ", 7);
+                            mActivity.get().save_eegpower_to_txt_sd(String.valueOf(element.midgamma)+" ", 8);
+                        }
+                    }
                     break;
                 case UPDATE_SHT11_TEMP:
                     mActivity.get().sht11_temp_textView.setText(msg.obj.toString());
@@ -228,5 +273,81 @@ public class RealTimeDataSHowActivity extends AppCompatActivity {
         getDataThreadStopFlag = true;
         getParserDataThreadStopFlag = true;
         finish();
+    }
+    public void save_eeg_to_txt_sd(String inputText){
+        try{
+            File file = new File(Environment.getExternalStorageDirectory(), "eeg.txt");
+            if (!file.exists()){
+                file.createNewFile();
+            }
+            FileOutputStream out = new FileOutputStream(file, true);
+            out.write(inputText.getBytes());
+            out.close();
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+    public void save_eegpower_to_txt_sd(String inputText, int flag){
+        try{
+            String filename = null;
+            switch (flag){
+                case 1:
+                    filename = "delta" + ".txt";
+                    break;
+                case 2:
+                    filename = "theta" + ".txt";
+                    break;
+                case 3:
+                    filename = "lowalpha" + ".txt";
+                    break;
+                case 4:
+                    filename = "highalpha" + ".txt";
+                    break;
+                case 5:
+                    filename="lowbeta" + ".txt";
+                    break;
+                case 6:
+                    filename = "highbeta" + ".txt";
+                    break;
+                case 7:
+                    filename = "lowgamma" + ".txt";
+                    break;
+                case 8:
+                    filename = "midgamma" + ".txt";
+                    break;
+            }
+            File file = new File(Environment.getExternalStorageDirectory(), filename);
+            if (!file.exists()){
+                file.createNewFile();
+            }
+            FileOutputStream out = new FileOutputStream(file, true);
+            out.write(inputText.getBytes());
+            out.close();
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+    public void save_to_txt(String inputText){
+        FileOutputStream out = null;
+        BufferedWriter writer = null;
+        try{
+            out = openFileOutput("eeg.txt", Context.MODE_APPEND);
+            writer = new BufferedWriter(new OutputStreamWriter(out));
+            writer.write(inputText);
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
+        finally {
+            try{
+                if(writer != null)
+                    writer.close();
+            }
+            catch (IOException e){
+                e.printStackTrace();
+            }
+        }
     }
 }
