@@ -13,8 +13,8 @@ def get_samples_labels(path):
     valence_list = []
     arousal_list = []
     for label in labels:
-        valence_list += list(label[:, 0]-5) #-5:中心化
-        arousal_list += list(label[:, 1]-5) #-5:中心化
+        valence_list += list(label[:, 0])
+        arousal_list += list(label[:, 1])
 
     return valence_list, arousal_list
 
