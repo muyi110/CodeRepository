@@ -148,38 +148,35 @@ class RNNClassifier(BaseEstimator, ClassifierMixin):
 
 if __name__ == "__main__":
     # 获取生理信号数据(训练集)
-    # datas, labels = read_data(train=True, test=False, raw_data=False, seed=42)
-    datas = np.load("./data_set/datas_train.npy")
-    labels = np.load("./data_set/label_train.npy")
-    print("train set number: ", len(labels))
-    print(datas[0])
-    # 数据处理，目前只用到 32 通道的 EEG 信号
-    datas_eeg = np.array(datas) # datas_result 的 shape=(880, features, seq_length)
-    datas_eeg = datas_eeg.transpose((0,2,1)) # 将 datas_result 的形状变为 shape=(880, seq_length, features)
-    #datas_eeg = datas_eeg.reshape(datas_eeg.shape[0], -1, 1)
-    labels = np.array(labels).reshape(-1)
-    # datas = datas.clear() # 清空列表， 释放内存
-    del datas
-    print(datas_eeg.shape)
+    datas, labels = read_data(windows=4, overlapping=3, raw_data=False)
+    datas = np.array(datas)
+    labels = np.array(labels)
+    print("data set number: ", len(labels))
+    print("datas shape: ", datas.shape)
+    # 开始将数据集划分为训练集和测试集
+    np.random.seed(42)
+    permutation = list(np.random.permutation(len(labels))) # 将数据随机打乱
+    train_index = permutation[:-10000]
+    test_index = permutation[-10000:]
+    datas_train = datas[train_index]
+    train_labels = labels[train_index]
+    datas_test = datas[test_index]
+    test_labels = labels[test_index]
+    del datas # 释放内存
+    datas_train = datas_train.transpose((0,2,1))
+    datas_test = datas_test.transpose((0,2,1))
+    datas_train = datas_train.reshape(datas.shape[0], -1, 1)
+    datas_test = datas_test.reshape(datas.shape[0], -1, 1)
+    print("train number: ", len(train_labels))
+    print(datas_train.shape, train_labels.shape)
+    print("test number: ", len(test_labels))
+    print(datas_test.shape, test_labels.shape)
 
-    # 获取生理信号数据（测试集）
-    # datas_test, labels_test = read_data(train=False, test=True, raw_data=False, seed=42)
-    datas_test = np.load("./data_set/datas_test.npy")
-    labels_test = np.load("./data_set/label_test.npy")
-    print("test set number: ", len(labels_test))
-    print(datas_test[0])
-    datas_test_eeg = np.array(datas_test) # shape=(400, features, seq_length)
-    datas_test_eeg = datas_test_eeg.transpose((0,2,1)) # 将 shape 转为 shape=(400, seq_length, features)
-    #datas_test_eeg = datas_test_eeg.reshape(datas_test_eeg.shape[0], -1, 1)
-    y_test = np.array(labels_test).reshape(-1)
-    #datas_test.clear()
-    del datas_test
-    print(datas_test_eeg.shape)
     #rnn = RNNClassifier(random_state=30, learning_rate=1e-3, dropout=0.5)
     #rnn.fit(X=datas_eeg, y=labels, n_epochs=500, X_test=datas_test_eeg, y_test=y_test, multi_cell_cell=False)
     #rnn_1 = RNNClassifier(random_state=30, learning_rate=1e-3, dropout=0.5)
     #rnn_1.fit(X=datas_eeg, y=labels, n_epochs=500, X_test=datas_test_eeg, y_test=y_test, multi_cell_cell=False)
     rnn_2 = RNNClassifier(random_state=30, learning_rate=1e-3, dropout=0.0)
-    rnn_2.fit(X=datas_eeg, y=labels, n_epochs=500, X_test=datas_test_eeg, y_test=y_test, multi_cell_cell=True)
+    rnn_2.fit(X=datas_train, y=train_labels, n_epochs=500, X_test=datas_test, y_test=test_labels, multi_cell_cell=True)
     rnn_3 = RNNClassifier(random_state=30, learning_rate=1e-3, dropout=0.6)
-    rnn_3.fit(X=datas_eeg, y=labels, n_epochs=500, X_test=datas_test_eeg, y_test=y_test, multi_cell_cell=True)
+    rnn_3.fit(X=datas_train, y=train_labels, n_epochs=500, X_test=datas_test, y_test=test_labels, multi_cell_cell=True)

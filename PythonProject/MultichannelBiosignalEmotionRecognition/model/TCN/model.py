@@ -46,6 +46,7 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
                                 shape=(None, self.sequence_length, self.in_channels), name="inputs")
         labels = tf.placeholder(tf.int32, shape=(None), name="labels")
         self._training = tf.placeholder_with_default(False, shape=(), name="training") # 表示是训练阶段还是测试阶段
+        learning_rate_ = tf.placeholder(tf.float32, shape=(), name="learning_rate")
         tcn_outputs = self._TCN(inputs, n_outputs, self._training)
         predictions = tf.nn.softmax(tcn_outputs, name="predictions")
         # 计算交叉熵
@@ -53,7 +54,7 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
         # xentropy = tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.cast(labels, tf.float32), logits=tcn_outputs)
         loss = tf.reduce_mean(xentropy, name="loss")
         # 构建优化器节点
-        optimizer = self.optimizer_class(learning_rate=self.learning_rate)
+        optimizer = self.optimizer_class(learning_rate=learning_rate_)
         training_op = optimizer.minimize(loss)
         # 构建计算准确率节点
         correct = tf.nn.in_top_k(tcn_outputs, labels, 1)
@@ -63,6 +64,7 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
         saver = tf.train.Saver()
 
         self._X, self._y = inputs, labels
+        self._learning_rate = learning_rate_
         self._predictions, self._loss = predictions, loss
         self._training_op, self._accuracy = training_op, accuracy
         self._init, self._saver = init, saver
@@ -114,11 +116,15 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
             sess.run(self._init)
             for epoch in range(n_epochs):
                 seed += 1
+                if epoch != 0 and epoch // 40 != 0:
+                    self.learning_rate = 0.0007
+                if epoch != 0 and epoch // 50 != 0:
+                    self.learning_rate = 0.0006
                 start_time = time.time()
                 for X_batch_index, y_batch_index in index_generator(len(y), self.batch_size, seed=seed):
                     X_batch = X[X_batch_index]
                     y_batch = y[y_batch_index]
-                    sess.run(self._training_op, feed_dict={self._X: X_batch, self._y: y_batch, self._training:True})
+                    sess.run(self._training_op, feed_dict={self._X: X_batch, self._y: y_batch, self._training:True, self._learning_rate:self.learning_rate})
 
                 # 下面用于 early stopping
                 if X_valid is not None and y_valid is not None:
@@ -160,6 +166,7 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
                         if total_acc_test > best_acc:
                             best_acc = total_acc_test
                             self.save("./my_model/train_model.ckpt") # 将训练模型保存
+                        print("learning rate: ", self.learning_rate)
                         print("Test accuracy: {:.4f}%\t  Test loss: {:.6f}".format((total_acc_test / (len(y_test) // 8))*100, total_loss_test/(len(y_test) // 8)))
                         # loss_test, acc_test = sess.run([self._loss, self._accuracy], 
                         #                                feed_dict={self._X:X_test, self._y:y_test})
@@ -199,18 +206,16 @@ if __name__ == "__main__":
     del datas # 释放内存
     datas_train = datas_train.transpose((0,2,1))
     datas_test = datas_test.transpose((0,2,1))
-    datas_train = datas_train.reshape(datas.shape[0], -1, 1)
-    datas_test = datas_test.reshape(datas.shape[0], -1, 1)
     print("train number: ", len(train_labels))
-    print(datas_train.shape, train_labels.shape)
+    print(datas_train.shape, train_labels)
     print("test number: ", len(test_labels))
-    print(datas_test.shape, test_labels.shape)
+    print(datas_test.shape, test_labels)
 
     n_classes = 4 # 4 分类问题
     input_channels = datas_train.shape[-1]
     seq_length = datas_train.shape[-2] # 序列的长度
     dropout = 0.0
-    learning_rate=0.001
+    learning_rate=0.0009
     num_channels = [50, 50, 50, 50, 50, 50, 50, 50] # 有多少层，及每一层包含的神经元个数（这里的一层指一个 block）
     kernel_size = 7   # 卷积核大小  
     batch_size = 16
@@ -218,8 +223,8 @@ if __name__ == "__main__":
     # 开始构建TCN 模型实例
     tcn = TCNClassifier(num_channels=num_channels, sequence_length = seq_length, kernel_size=kernel_size, 
                         dropout=dropout, batch_size=batch_size, in_channels=input_channels, 
-                        random_state=422, learning_rate=learning_rate)
-    tcn.fit(X=datas_train, y=train_labels, n_epochs=50, X_test=datas_test, y_test=test_labels)
+                        random_state=42, learning_rate=learning_rate)
+    tcn.fit(X=datas_train, y=train_labels, n_epochs=61, X_test=datas_test, y_test=test_labels)
     total_acc_test = 0
     for i in range(len(test_labels) // 8):
         X_batch_test = datas_test[i*8:(i+1)*8, :, :]

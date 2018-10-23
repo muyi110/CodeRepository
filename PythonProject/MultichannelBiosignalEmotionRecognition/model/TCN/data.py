@@ -5,7 +5,7 @@ import numpy as np
 import features
 from features import data_filter, differential_entropy
 
-SAMPLES_PATH = '../../data_analysis/samples/'''
+SAMPLES_PATH = './samples/'
 params = (features.b_theta, features.a_theta, features.b_alpha, features.a_alpha, 
           features.b_beta, features.a_beta, features.b_gamma, features.a_gamma)
 def get_samples_data(path, windows=4, overlapping=3):
@@ -92,7 +92,7 @@ def read_data(path=SAMPLES_PATH, windows=4, overlapping=3, raw_data=False):
         else:
             #datas_result.append(data)
             pass
-    #datas_result = datas
+    datas_result = datas
     del datas # 释放内存
     assert len(datas_result) == len(labels)
     # if raw_data:
