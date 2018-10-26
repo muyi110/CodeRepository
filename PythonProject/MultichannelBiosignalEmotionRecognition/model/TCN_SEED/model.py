@@ -197,8 +197,8 @@ if __name__ == "__main__":
     # 开始将数据集划分为训练集和测试集
     np.random.seed(42)
     permutation = list(np.random.permutation(len(labels))) # 将数据随机打乱
-    train_index = permutation[:-10000]
-    test_index = permutation[-10000:]
+    train_index = permutation[:-800]
+    test_index = permutation[-800:]
     datas_train = datas[train_index]
     train_labels = labels[train_index]
     datas_test = datas[test_index]

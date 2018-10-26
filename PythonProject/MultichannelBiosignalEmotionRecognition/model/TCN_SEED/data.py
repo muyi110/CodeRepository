@@ -20,7 +20,7 @@ def get_samples_data(path, windows=4, overlapping=3):
     datas = [] 
     labels = []
     label_ = scio.loadmat(path+"/label.mat")["label"]
-    for people in range(15*3): # 15个人，每个人参加 3 次实验
+    for people in range(1): # 15个人，每个人参加 3 次实验
         data = scio.loadmat(file_path[people]) # 得到一个字典
         # 删除无关信息，保留 15 个 trial 的 eeg 信号 
         del data["__version__"]

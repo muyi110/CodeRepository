@@ -12,9 +12,9 @@ from data import read_data, index_generator
 # 构建 RNN 模型类，为了兼容 scikit-learning 的 RandomizedSearchCV 类，后续可能实现超参数搜索
 class RNNClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self, 
-                 n_steps = 15,
-                 n_inputs = 128, # 可以理解为输入的特征数
-                 n_neurons = 10,# 每个 cell 包含的神经元个数
+                 n_steps = 128,
+                 n_inputs = 32, # 可以理解为输入的特征数
+                 n_neurons = 100,# 每个 cell 包含的神经元个数
                  n_outputs = 4, # 4 分类
                  learning_rate = 0.001,
                  random_state = None, 
@@ -35,9 +35,9 @@ class RNNClassifier(BaseEstimator, ClassifierMixin):
         lstm_cells_1 = tf.contrib.rnn.BasicLSTMCell(num_units=self.n_neurons) # 构建 LSTM cell
         if multi_layer:
             #lstm_cells_1 = tf.contrib.rnn.DropoutWrapper(lstm_cells_1, input_keep_prob=1-self.dropout)
-            lstm_cells_2 = tf.contrib.rnn.BasicLSTMCell(num_units=10) # 构建第二层 LSTM cell
+            lstm_cells_2 = tf.contrib.rnn.BasicLSTMCell(num_units=50) # 构建第二层 LSTM cell
             #lstm_cells_2 = tf.contrib.rnn.DropoutWrapper(lstm_cells_2, input_keep_prob=1-self.dropout)
-            lstm_cells_3 = tf.contrib.rnn.BasicLSTMCell(num_units=10) # 构建第三层 LSTM cell
+            lstm_cells_3 = tf.contrib.rnn.BasicLSTMCell(num_units=50) # 构建第三层 LSTM cell
             #lstm_cells_3 = tf.contrib.rnn.DropoutWrapper(lstm_cells_3, input_keep_prob=1-self.dropout)
             multi_cell_cell = tf.contrib.rnn.MultiRNNCell([lstm_cells_1, lstm_cells_2, lstm_cells_3])
         else:
@@ -116,7 +116,7 @@ class RNNClassifier(BaseEstimator, ClassifierMixin):
                     sess.run(self._training_op, feed_dict={self._X: X_batch, self._y: y_batch, self._is_training:True})
                 total_loss = 0 
                 total_acc = 0
-                if epoch % 10 == 0:
+                if epoch % 1 == 0:
                     for i in range(len(y) // 8):
                         X_batch = X[i*8:(i+1)*8,:,:]
                         y_batch = y[i*8:(i+1)*8]
@@ -127,13 +127,20 @@ class RNNClassifier(BaseEstimator, ClassifierMixin):
                         end_time = time.time()
                     print("{}\ttraining loss: {:.6f}\t|  training accuracy: {:.2f}% | time: {:.2f}s".format(epoch, 
                           total_loss/(len(y)//8), (total_acc / (len(y)//8))*100, end_time-start_time))
-                if X_test is not None and y_test is not None and epoch % 20 == 0:
-                    loss_test, acc_test = sess.run([self._loss, self._accuracy], 
-                                                    feed_dict={self._X:X_test, self._y:y_test, self._is_training:False})
-                    print("Test accuracy: {:.4f}%\t Test loss: {:.6f}".format(acc_test*100, loss_test))
-                    y_pred = self.predict(X_test)
-                    print("predict: ", y_pred)
-                    print("acctually: ", y_test+1)
+                if X_test is not None and y_test is not None and epoch % 2 == 0:
+                    total_acc_test = 0
+                    total_loss_test = 0
+                    for i in range(len(y_test) // 8):
+                        X_batch_test = X_test[i*8:(i+1)*8, :, :]
+                        y_batch_test = y_test[i*8:(i+1)*8]
+                        loss_test, acc_test = sess.run([self._loss, self._accuracy], 
+                                feed_dict={self._X:X_batch_test, self._y:y_batch_test, self._is_training:False})
+                        total_acc_test += acc_test
+                        total_loss_test += loss_test
+                    print("Test accuracy: {:.4f}%\t  Test loss: {:.6f}".format((total_acc_test / (len(y_test) // 8))*100, total_loss_test/(len(y_test) // 8)))
+                    #loss_test, acc_test = sess.run([self._loss, self._accuracy], 
+                    #                                feed_dict={self._X:X_test, self._y:y_test, self._is_training:False})
+                    #print("Test accuracy: {:.4f}%\t Test loss: {:.6f}".format(acc_test*100, loss_test))
             return self
     def predict_proba(self, X):
         if not self._session:
@@ -148,7 +155,7 @@ class RNNClassifier(BaseEstimator, ClassifierMixin):
 
 if __name__ == "__main__":
     # 获取生理信号数据(训练集)
-    datas, labels = read_data(windows=4, overlapping=3, raw_data=False)
+    datas, labels = read_data(windows=1, overlapping=0, raw_data=True)
     datas = np.array(datas)
     labels = np.array(labels)
     print("data set number: ", len(labels))
@@ -156,8 +163,8 @@ if __name__ == "__main__":
     # 开始将数据集划分为训练集和测试集
     np.random.seed(42)
     permutation = list(np.random.permutation(len(labels))) # 将数据随机打乱
-    train_index = permutation[:-10000]
-    test_index = permutation[-10000:]
+    train_index = permutation[:-800]
+    test_index = permutation[-800:]
     datas_train = datas[train_index]
     train_labels = labels[train_index]
     datas_test = datas[test_index]
@@ -165,18 +172,11 @@ if __name__ == "__main__":
     del datas # 释放内存
     datas_train = datas_train.transpose((0,2,1))
     datas_test = datas_test.transpose((0,2,1))
-    datas_train = datas_train.reshape(datas.shape[0], -1, 1)
-    datas_test = datas_test.reshape(datas.shape[0], -1, 1)
+    #datas_train = datas_train.reshape(datas.shape[0], -1, 1)
+    #datas_test = datas_test.reshape(datas.shape[0], -1, 1)
     print("train number: ", len(train_labels))
     print(datas_train.shape, train_labels.shape)
     print("test number: ", len(test_labels))
     print(datas_test.shape, test_labels.shape)
-
-    #rnn = RNNClassifier(random_state=30, learning_rate=1e-3, dropout=0.5)
-    #rnn.fit(X=datas_eeg, y=labels, n_epochs=500, X_test=datas_test_eeg, y_test=y_test, multi_cell_cell=False)
-    #rnn_1 = RNNClassifier(random_state=30, learning_rate=1e-3, dropout=0.5)
-    #rnn_1.fit(X=datas_eeg, y=labels, n_epochs=500, X_test=datas_test_eeg, y_test=y_test, multi_cell_cell=False)
-    rnn_2 = RNNClassifier(random_state=30, learning_rate=1e-3, dropout=0.0)
-    rnn_2.fit(X=datas_train, y=train_labels, n_epochs=500, X_test=datas_test, y_test=test_labels, multi_cell_cell=True)
-    rnn_3 = RNNClassifier(random_state=30, learning_rate=1e-3, dropout=0.6)
-    rnn_3.fit(X=datas_train, y=train_labels, n_epochs=500, X_test=datas_test, y_test=test_labels, multi_cell_cell=True)
+    rnn = RNNClassifier(random_state=30, learning_rate=1e-4, dropout=0.0)
+    rnn.fit(X=datas_train, y=train_labels, n_epochs=50, X_test=datas_test, y_test=test_labels, multi_cell_cell=True)

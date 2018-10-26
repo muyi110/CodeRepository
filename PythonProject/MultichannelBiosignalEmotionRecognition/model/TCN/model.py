@@ -197,8 +197,8 @@ if __name__ == "__main__":
     # 开始将数据集划分为训练集和测试集
     np.random.seed(42)
     permutation = list(np.random.permutation(len(labels))) # 将数据随机打乱
-    train_index = permutation[:-10000]
-    test_index = permutation[-10000:]
+    train_index = permutation[:-800]
+    test_index = permutation[-800:]
     datas_train = datas[train_index]
     train_labels = labels[train_index]
     datas_test = datas[test_index]
@@ -207,9 +207,9 @@ if __name__ == "__main__":
     datas_train = datas_train.transpose((0,2,1))
     datas_test = datas_test.transpose((0,2,1))
     print("train number: ", len(train_labels))
-    print(datas_train.shape, train_labels)
+    print(datas_train.shape, train_labels.shape)
     print("test number: ", len(test_labels))
-    print(datas_test.shape, test_labels)
+    print(datas_test.shape, test_labels.shape)
 
     n_classes = 4 # 4 分类问题
     input_channels = datas_train.shape[-1]

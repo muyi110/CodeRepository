@@ -5,7 +5,7 @@ import numpy as np
 import features
 from features import data_filter, differential_entropy
 
-SAMPLES_PATH = '../../data_analysis/samples/'''
+SAMPLES_PATH = '../../data_analysis/samples/'
 params = (features.b_theta, features.a_theta, features.b_alpha, features.a_alpha, 
           features.b_beta, features.a_beta, features.b_gamma, features.a_gamma)
 def get_samples_data(path, windows=4, overlapping=3):
@@ -18,7 +18,7 @@ def get_samples_data(path, windows=4, overlapping=3):
     file_path = [os.path.join(path, samples_dirs[i]) for i in range(len(samples_dirs))]
     datas = [] 
     labels = []
-    for people in range(32):
+    for people in range(0, 1):
         for trial in range(40):
             data = np.loadtxt(file_path[people]+'/trial_'+str(trial+1)+".csv", delimiter=',', 
                              skiprows=0, dtype=np.float32)
@@ -89,16 +89,11 @@ def read_data(path=SAMPLES_PATH, windows=4, overlapping=3, raw_data=False):
                 _min = min(features_list)
                 data_list.append((np.array(features_list).reshape(-1, 1) - _min)/(_max - _min)) # 0-1化处理
             datas_result.append(np.c_[tuple(data_list)]) # shape=(features, seq_length)
-        else:
-            #datas_result.append(data)
-            pass
-    #datas_result = datas
+    if(raw_data):
+        datas_result = datas
     del datas # 释放内存
     assert len(datas_result) == len(labels)
-    # if raw_data:
-    #     np.save("./data_set/datas_raw", datas_result)
-    #     np.save("./data_set/label_raw", labels)
-    # if not raw_data:
-    #     np.save("./data_set/datas_features", datas_result)
-    #     np.save("./data_set/label_features", labels)
+    if not raw_data:
+        np.save("./data_set/datas_features", datas_result)
+        np.save("./data_set/label_features", labels)
     return (datas_result, labels)
