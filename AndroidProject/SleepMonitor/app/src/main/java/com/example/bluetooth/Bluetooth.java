@@ -282,7 +282,7 @@ public class Bluetooth {
                     bytes = mmInStream.read(buffer);
                     //Put received data to buffer
                     for(int i = 0; i < bytes; ++i) {
-                        if(!mDataReceive.put(buffer[i])) {
+                        if (!mDataReceive.put(buffer[i])) {
                             Log.d(TAG, "data put error!!");
                             break;
                         }

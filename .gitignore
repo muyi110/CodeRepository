@@ -1,5 +1,6 @@
 PythonProject/MultichannelBiosignalEmotionRecognition/data_analysis/data
 PythonProject/MultichannelBiosignalEmotionRecognition/data_analysis/samples
 TensorFlowDemo/
+PythonProject/SleepEEG/dataset
 __pycache__/
 README

@@ -54,6 +54,7 @@ public class RealTimeDataSHowActivity extends AppCompatActivity {
     private Button saveButton;
 
     private Boolean save_data_flag = false; //保存数据标志
+    private Boolean valid_data_flag = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,7 +119,7 @@ public class RealTimeDataSHowActivity extends AppCompatActivity {
                             Log.d(TAG, "Data Parser error!!");
                     }
                     parser_complete_flag = true;
-                    Thread.sleep(100);
+                    Thread.sleep(8);
                 } catch (Exception e) {
                     Log.e(TAG, "Data get error !");
                     break;
@@ -181,7 +182,7 @@ public class RealTimeDataSHowActivity extends AppCompatActivity {
                         mMyHandle.obtainMessage(UPDATE_HEAD_MOVE, -1, -1, stringBuilder_head_move).sendToTarget();
                         mMyHandle.obtainMessage(UPDATE_EEG_POWER, eegPowerDataPacks.length, -1, eegPowerDataPacks).sendToTarget();
                         parser_complete_flag = false;
-                        Thread.sleep(100);
+                        Thread.sleep(25);
                     } catch (Exception e) {
                         Log.e(TAG, "Data parser result get error !");
                         break;
