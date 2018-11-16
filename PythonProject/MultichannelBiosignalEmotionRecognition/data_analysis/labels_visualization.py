@@ -13,15 +13,15 @@ def get_samples_labels(path):
     valence_list = []
     arousal_list = []
     for label in labels:
-        valence_list += list(label[:, 0])
-        arousal_list += list(label[:, 1])
+        valence_list += list(label[:, 0]-5)
+        arousal_list += list(label[:, 1]-5)
 
     return valence_list, arousal_list
 
 def labels_plot(x, y):
     arousal = x
     valence = y
-    plt.scatter(arousal, valence)
+    plt.scatter(arousal, valence, marker="*", c="r")
     plt.xlim([-4.5, 4.5])
     plt.ylim([-4.5, 4.5])
     plt.plot((-4.5, 4.5),(0,0), color='black', linewidth=2)

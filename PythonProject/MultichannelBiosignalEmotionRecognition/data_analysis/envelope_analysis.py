@@ -60,11 +60,11 @@ def fft(datas):
     return fft_result    
 
 if __name__ == "__main__":
-    eeg_data = get_sample_data(people_num=3, trial_num=1)
-    max_spline, min_spline = get_envelope(eeg_data[0][:10*128], np.arange(len(eeg_data[0][:10*128])))
-    plot(eeg_data[0][:10*128].reshape(1,-1), figure_num=1, max_spline=max_spline.reshape(1, -1), min_spline=None)
+    eeg_data = get_sample_data(people_num=0, trial_num=2)
+    max_spline, min_spline = get_envelope(eeg_data[0], np.arange(len(eeg_data[0])))
+    plot(eeg_data[0].reshape(1,-1), figure_num=1, max_spline=max_spline.reshape(1, -1), min_spline=None)
 
-    theta, alpha, beta, gamma = data_filter(eeg_data[0][:10*128])
+    theta, alpha, beta, gamma = data_filter(eeg_data[0])
     filt_eeg_data = np.r_[theta.reshape(1, -1), alpha.reshape(1, -1), beta.reshape(1, -1), gamma.reshape(1, -1)]
     max_spline_theta, min_spline_theta = get_envelope(theta, np.arange(len(theta)))
     max_spline_alpha, min_spline_alpha = get_envelope(alpha, np.arange(len(alpha)))
