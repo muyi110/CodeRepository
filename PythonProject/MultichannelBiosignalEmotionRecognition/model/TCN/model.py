@@ -10,6 +10,9 @@ from sklearn.model_selection import RandomizedSearchCV
 from tcn import TCN
 from data import read_data, index_generator
 
+tf.set_random_seed(42)
+np.random.seed(42)
+
 # 构建 TCN 模型类，为了兼容 scikit-learning 的 RandomizedSearchCV 类，后续可能实现超参数搜索
 class TCNClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self,
@@ -117,9 +120,9 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
             for epoch in range(n_epochs):
                 seed += 1
                 if epoch != 0 and epoch // 40 != 0:
-                    self.learning_rate = 0.0007
+                    self.learning_rate = 0.0005
                 if epoch != 0 and epoch // 50 != 0:
-                    self.learning_rate = 0.0006
+                    self.learning_rate = 0.0002
                 start_time = time.time()
                 for X_batch_index, y_batch_index in index_generator(len(y), self.batch_size, seed=seed):
                     X_batch = X[X_batch_index]
@@ -153,7 +156,7 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
                         end_time = time.time()
                     print("{}\ttraining loss: {:.6f}\t|  training accuracy: {:.2f}% | time: {:.2f}s".format(epoch, 
                           total_loss/(len(y)//8), (total_acc / (len(y)//8))*100, end_time-start_time))
-                    if X_test is not None and y_test is not None and epoch % 2 == 0:
+                    if X_test is not None and y_test is not None and epoch % 1 == 0:
                         total_acc_test = 0
                         total_loss_test = 0
                         for i in range(len(y_test) // 8):
@@ -184,10 +187,12 @@ class TCNClassifier(BaseEstimator, ClassifierMixin):
         return np.array([self.classes_[class_index] for class_index in class_indices], np.int32).reshape(-1)
     def save(self, path):
         self._saver.save(self._session, path)
+    def restore(self, path="./my_model/train_model.ckpt"):
+        self._saver.restore(self._session, path)
 
 if __name__ == "__main__":
     # 获取生理信号数据
-    datas, labels = read_data(windows=4, overlapping=3, raw_data=True)
+    datas, labels = read_data(windows=4, overlapping=2, raw_data=True)
     #datas = np.load("./data_set/datas_train.npy")
     #labels = np.load("./data_set/label_train.npy")
     datas = np.array(datas)
@@ -197,8 +202,8 @@ if __name__ == "__main__":
     # 开始将数据集划分为训练集和测试集
     np.random.seed(42)
     permutation = list(np.random.permutation(len(labels))) # 将数据随机打乱
-    train_index = permutation[:-800]
-    test_index = permutation[-800:]
+    train_index = permutation[:-int(len(labels)*0.3)]
+    test_index = permutation[-int(len(labels)*0.3):]
     datas_train = datas[train_index]
     train_labels = labels[train_index]
     datas_test = datas[test_index]
@@ -206,6 +211,8 @@ if __name__ == "__main__":
     del datas # 释放内存
     datas_train = datas_train.transpose((0,2,1))
     datas_test = datas_test.transpose((0,2,1))
+    # datas_train = datas_train.reshape(datas_train.shape[0], -1, 1) # not raw data
+    # datas_test = datas_test.reshape(datas_test.shape[0], -1, 1) # not raw data
     print("train number: ", len(train_labels))
     print(datas_train.shape, train_labels.shape)
     print("test number: ", len(test_labels))
@@ -215,7 +222,7 @@ if __name__ == "__main__":
     input_channels = datas_train.shape[-1]
     seq_length = datas_train.shape[-2] # 序列的长度
     dropout = 0.0
-    learning_rate=0.0009
+    learning_rate=0.0008
     num_channels = [50, 50, 50, 50, 50, 50, 50, 50] # 有多少层，及每一层包含的神经元个数（这里的一层指一个 block）
     kernel_size = 7   # 卷积核大小  
     batch_size = 16
@@ -224,7 +231,8 @@ if __name__ == "__main__":
     tcn = TCNClassifier(num_channels=num_channels, sequence_length = seq_length, kernel_size=kernel_size, 
                         dropout=dropout, batch_size=batch_size, in_channels=input_channels, 
                         random_state=42, learning_rate=learning_rate)
-    tcn.fit(X=datas_train, y=train_labels, n_epochs=61, X_test=datas_test, y_test=test_labels)
+    tcn.fit(X=datas_train, y=train_labels, n_epochs=101, X_test=datas_test, y_test=test_labels)
+    tcn.restore()
     total_acc_test = 0
     for i in range(len(test_labels) // 8):
         X_batch_test = datas_test[i*8:(i+1)*8, :, :]

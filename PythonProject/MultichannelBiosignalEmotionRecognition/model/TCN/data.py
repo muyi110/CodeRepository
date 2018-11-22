@@ -5,7 +5,7 @@ import numpy as np
 import features
 from features import data_filter, differential_entropy
 
-SAMPLES_PATH = '../../data_analysis/samples/'
+SAMPLES_PATH = '../../samples/'
 params = (features.b_theta, features.a_theta, features.b_alpha, features.a_alpha, 
           features.b_beta, features.a_beta, features.b_gamma, features.a_gamma)
 def get_samples_data(path, windows=4, overlapping=3):
@@ -18,7 +18,7 @@ def get_samples_data(path, windows=4, overlapping=3):
     file_path = [os.path.join(path, samples_dirs[i]) for i in range(len(samples_dirs))]
     datas = [] 
     labels = []
-    for people in range(0, 1):
+    for people in range(0, 32):
         for trial in range(40):
             data = np.loadtxt(file_path[people]+'/trial_'+str(trial+1)+".csv", delimiter=',', 
                              skiprows=0, dtype=np.float32)

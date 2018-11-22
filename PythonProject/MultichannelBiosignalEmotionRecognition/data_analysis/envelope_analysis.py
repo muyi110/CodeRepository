@@ -60,7 +60,7 @@ def fft(datas):
     return fft_result    
 
 if __name__ == "__main__":
-    eeg_data = get_sample_data(people_num=0, trial_num=2)
+    eeg_data = get_sample_data(people_num=30, trial_num=2)
     max_spline, min_spline = get_envelope(eeg_data[0], np.arange(len(eeg_data[0])))
     plot(eeg_data[0].reshape(1,-1), figure_num=1, max_spline=max_spline.reshape(1, -1), min_spline=None)
 
