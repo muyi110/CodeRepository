@@ -26,7 +26,7 @@ def plot_raw_eeg(eeg, people, trial):
         plt.grid()
 
 if __name__ == "__main__":
-    for people in range(23, 25):
+    for people in range(0, 1):
         eeg = get_sample_data(people_num=people, trial_num=2)
         plot_raw_eeg(eeg, people, trial=1)
         plt.subplots_adjust(wspace=0.1, left=0.03, right=0.99, top=0.95, bottom=0.01)
